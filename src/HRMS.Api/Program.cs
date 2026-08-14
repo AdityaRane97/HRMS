@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using FluentValidation;
 using HRMS.Infrastructure.Data;
 using HRMS.Api.Middleware;
+using HRMS.Api.Filters;
 using Serilog;
 using AutoMapper;
 
@@ -19,7 +21,10 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Basic services for Phase 1
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidateModelFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -35,6 +40,9 @@ builder.Services.AddHealthChecks();
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining(typeof(Program));
 
 // Register ICurrentUser implementation in HRMS.Api (populated per request)
 builder.Services.AddHttpContextAccessor();
