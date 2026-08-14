@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HRMS.Api/HRMS.Api.csproj" />
+    <Project Path="src/HRMS.Application/HRMS.Application.csproj" />
+    <Project Path="src/HRMS.Domain/HRMS.Domain.csproj" />
+    <Project Path="src/HRMS.Infrastructure/HRMS.Infrastructure.csproj" />
+  </Folder>
+</Solution>

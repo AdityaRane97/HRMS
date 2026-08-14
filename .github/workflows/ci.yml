@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore HRMS.sln
+      - name: Build
+        run: dotnet build HRMS.sln --configuration Release --no-restore
+      - name: Test
+        run: |
+          echo "No tests yet"
