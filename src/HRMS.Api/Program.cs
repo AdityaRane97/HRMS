@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using HRMS.Infrastructure.Data;
+using HRMS.Api.Middleware;
 using Serilog;
 using AutoMapper;
 
@@ -32,7 +33,7 @@ builder.Services.AddDbContext<HrmsDbContext>(options =>
 // Health checks
 builder.Services.AddHealthChecks();
 
-// AutoMapper (MediatR deferred to Phase 2 when needed)
+// AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Register ICurrentUser implementation in HRMS.Api (populated per request)
@@ -40,6 +41,9 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<HRMS.Application.Common.ICurrentUser, HRMS.Api.Identity.CurrentUser>();
 
 var app = builder.Build();
+
+// Use error handling middleware before other middleware
+app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
