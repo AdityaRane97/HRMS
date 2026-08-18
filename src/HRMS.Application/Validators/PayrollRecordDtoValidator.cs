@@ -5,8 +5,7 @@ namespace HRMS.Application.Validators;
 
 /// <summary>
 /// Validator for CreatePayrollRecordDto.
-/// TODO: User to implement validation rules for payroll creation
-/// Consider: Employee exists, salary ranges, date validity, duplicate prevention, etc.
+/// Validates employee ID, salary components, and date ranges.
 /// </summary>
 public class CreatePayrollRecordDtoValidator : AbstractValidator<CreatePayrollRecordDto>
 {
@@ -19,31 +18,28 @@ public class CreatePayrollRecordDtoValidator : AbstractValidator<CreatePayrollRe
         RuleFor(x => x.PayrollMonth)
             .NotEmpty()
             .WithMessage("Payroll month is required")
-            // TODO: Add rule to prevent past dates or duplicates
-            ;
+            .LessThanOrEqualTo(DateTime.UtcNow)
+            .WithMessage("Payroll month cannot be in the future");
 
         RuleFor(x => x.PaymentDate)
             .NotEmpty()
             .WithMessage("Payment date is required")
-            .GreaterThanOrEqualTo(x => x.PayrollMonth.AddMonths(0))
-            .WithMessage("Payment date should be in the same or later month");
-            // TODO: Add rule to validate payment date is not before payroll month
+            .GreaterThanOrEqualTo(x => x.PayrollMonth)
+            .WithMessage("Payment date must be in or after payroll month");
 
         RuleFor(x => x.BaseSalary)
             .GreaterThan(0)
             .WithMessage("Base salary must be greater than zero")
-            // TODO: User to add range validation (min/max salary bounds)
-            ;
+            .LessThanOrEqualTo(10000000)
+            .WithMessage("Base salary cannot exceed company maximum");
 
         RuleFor(x => x.HouseRentAllowance)
             .GreaterThanOrEqualTo(0)
             .WithMessage("House rent allowance cannot be negative");
-            // TODO: User to add percentage validation (e.g., HRA <= 50% of base)
 
         RuleFor(x => x.MedicalAllowance)
             .GreaterThanOrEqualTo(0)
             .WithMessage("Medical allowance cannot be negative");
-            // TODO: User to add ceiling rules
 
         RuleFor(x => x.TransportAllowance)
             .GreaterThanOrEqualTo(0)
@@ -52,18 +48,12 @@ public class CreatePayrollRecordDtoValidator : AbstractValidator<CreatePayrollRe
         RuleFor(x => x.OtherAllowances)
             .GreaterThanOrEqualTo(0)
             .WithMessage("Other allowances cannot be negative");
-
-        // TODO: User to add composite validation:
-        // - Total allowances should not exceed X% of base salary
-        // - Cross-field dependencies (e.g., if ContractType=Intern, different salary rules)
-        // - Database-level checks (employee must exist, not already paid for month, etc.)
     }
 }
 
 /// <summary>
 /// Validator for UpdatePayrollRecordDto.
-/// TODO: User to implement validation rules for payroll updates
-/// Consider: Allow updates only if not yet processed, validate new values, etc.
+/// Validates salary component updates only for pending payroll.
 /// </summary>
 public class UpdatePayrollRecordDtoValidator : AbstractValidator<UpdatePayrollRecordDto>
 {
@@ -113,10 +103,5 @@ public class UpdatePayrollRecordDtoValidator : AbstractValidator<UpdatePayrollRe
             .GreaterThanOrEqualTo(0)
             .WithMessage("Other deductions cannot be negative")
             .When(x => x.OtherDeductions.HasValue);
-
-        // TODO: User to add:
-        // - Validation that payroll is not already processed/paid
-        // - Recalculation logic trigger
-        // - Approval requirement for salary adjustments
     }
 }

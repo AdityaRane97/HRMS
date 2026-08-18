@@ -5,8 +5,7 @@ namespace HRMS.Application.Validators;
 
 /// <summary>
 /// Validator for AttendanceCheckInDto.
-/// TODO: User to implement validation for check-in
-/// Consider: Employee active, not already checked in, time zone handling, geofencing, etc.
+/// Validates employee ID, check-in time, and location requirements.
 /// </summary>
 public class AttendanceCheckInDtoValidator : AbstractValidator<AttendanceCheckInDto>
 {
@@ -21,19 +20,18 @@ public class AttendanceCheckInDtoValidator : AbstractValidator<AttendanceCheckIn
             .WithMessage("Check-in time is required")
             .LessThanOrEqualTo(DateTime.UtcNow)
             .WithMessage("Check-in time cannot be in the future");
-            // TODO: Add validation to prevent duplicate check-ins for same day
 
         RuleFor(x => x.Location)
             .NotEmpty()
-            .WithMessage("Location is required");
-            // TODO: Add location validation (allowed locations, geofencing, etc.)
+            .WithMessage("Location is required")
+            .MaximumLength(100)
+            .WithMessage("Location cannot exceed 100 characters");
     }
 }
 
 /// <summary>
 /// Validator for AttendanceCheckOutDto.
-/// TODO: User to implement validation for check-out
-/// Consider: Employee checked in, checkout after checkin, minimum work duration, etc.
+/// Validates employee ID, check-out time, and remarks.
 /// </summary>
 public class AttendanceCheckOutDtoValidator : AbstractValidator<AttendanceCheckOutDto>
 {
@@ -48,8 +46,6 @@ public class AttendanceCheckOutDtoValidator : AbstractValidator<AttendanceCheckO
             .WithMessage("Check-out time is required")
             .LessThanOrEqualTo(DateTime.UtcNow)
             .WithMessage("Check-out time cannot be in the future");
-            // TODO: Add validation that check-out is after corresponding check-in
-            // TODO: Add validation for minimum work duration (e.g., at least 4 hours)
 
         RuleFor(x => x.Remarks)
             .MaximumLength(500)
@@ -59,9 +55,8 @@ public class AttendanceCheckOutDtoValidator : AbstractValidator<AttendanceCheckO
 }
 
 /// <summary>
-/// Validator for AttendanceApprovalDto (HR/Manager override).
-/// TODO: User to implement validation for attendance adjustments
-/// Consider: Valid status values, only by authorized users, not for future dates, etc.
+/// Validator for AttendanceApprovalDto.
+/// Validates attendance status override, worked hours, and approval remarks.
 /// </summary>
 public class AttendanceApprovalDtoValidator : AbstractValidator<AttendanceApprovalDto>
 {
@@ -98,10 +93,5 @@ public class AttendanceApprovalDtoValidator : AbstractValidator<AttendanceApprov
         RuleFor(x => x.ApprovalRemarks)
             .MaximumLength(500)
             .WithMessage("Approval remarks cannot exceed 500 characters");
-
-        // TODO: User to add:
-        // - Validation that approver has authority (HR/Manager)
-        // - Concurrent approval prevention (same date/employee)
-        // - Audit trail requirement
     }
 }

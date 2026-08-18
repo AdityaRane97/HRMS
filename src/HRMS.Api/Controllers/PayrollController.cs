@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using HRMS.Application.DTOs;
@@ -8,8 +9,10 @@ namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for payroll management.
-/// TODO: Add authorization checks (HR only), caching, pagination
+/// Phase 2.2: Protected with [Authorize]. HR-role checks to be added in Phase 3.
+/// TODO: Add role-based authorization (HR only), caching, pagination
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/payroll")]
 [Tags("Payroll")]

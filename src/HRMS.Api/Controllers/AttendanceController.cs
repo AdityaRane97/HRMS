@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using HRMS.Application.DTOs;
@@ -7,8 +8,10 @@ namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for attendance tracking and management.
-/// TODO: Add authorization checks (own record, manager, HR), rate limiting
+/// Phase 2.2: Protected with [Authorize]. Resource-based and role-based checks to be added in Phase 3.
+/// TODO: Add role-based authorization (employee own record, manager, HR), rate limiting, geofencing
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/attendance")]
 [Tags("Attendance")]

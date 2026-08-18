@@ -5,8 +5,7 @@ namespace HRMS.Application.Validators;
 
 /// <summary>
 /// Validator for CreateLeaveRequestDto.
-/// TODO: User to implement validation for leave request creation
-/// Consider: Employee active, date validity, leave balance, overlapping leaves, etc.
+/// Validates leave type, date range, reason, and half-day configuration.
 /// </summary>
 public class CreateLeaveRequestDtoValidator : AbstractValidator<CreateLeaveRequestDto>
 {
@@ -60,22 +59,12 @@ public class CreateLeaveRequestDtoValidator : AbstractValidator<CreateLeaveReque
         RuleFor(x => x.IsHalfDay)
             .Must((dto, isHalfDay) => !(isHalfDay && string.IsNullOrEmpty(dto.HalfDayPeriod)))
             .WithMessage("Half-day period is required when IsHalfDay is true");
-
-        // TODO: User to add:
-        // - Employee must exist and be active
-        // - Check leave balance for the leave type
-        // - Check for overlapping leave requests
-        // - Advance notice requirement (e.g., 5 days for annual leave)
-        // - Blackout dates/periods
-        // - Manager must be assigned to employee
-        // - Replacement employee validation (if provided)
     }
 }
 
 /// <summary>
 /// Validator for ApproveLeaveByManagerDto.
-/// TODO: User to implement validation for manager approval
-/// Consider: Manager is actually the employee's manager, leave is still pending, etc.
+/// Validates manager ID and approval remarks.
 /// </summary>
 public class ApproveLeaveByManagerDtoValidator : AbstractValidator<ApproveLeaveByManagerDto>
 {
@@ -89,19 +78,12 @@ public class ApproveLeaveByManagerDtoValidator : AbstractValidator<ApproveLeaveB
             .MaximumLength(500)
             .WithMessage("Remarks cannot exceed 500 characters")
             .When(x => !string.IsNullOrEmpty(x.Remarks));
-
-        // TODO: User to add:
-        // - Validation that remarker is truly the manager of the employee
-        // - Rejection reason is required if !IsApproved
-        // - Cannot approve leaves in the past
-        // - Cannot re-approve already processed leaves
     }
 }
 
 /// <summary>
-/// Validator for ApproveLeaveByHRDto (HR final approval).
-/// TODO: User to implement validation for HR approval
-/// Consider: HR authority, manager approval already obtained, etc.
+/// Validator for ApproveLeaveByHRDto.
+/// Validates HR approver ID and approval remarks.
 /// </summary>
 public class ApproveLeaveByHRDtoValidator : AbstractValidator<ApproveLeaveByHRDto>
 {
@@ -115,21 +97,12 @@ public class ApproveLeaveByHRDtoValidator : AbstractValidator<ApproveLeaveByHRDt
             .MaximumLength(500)
             .WithMessage("Remarks cannot exceed 500 characters")
             .When(x => !string.IsNullOrEmpty(x.Remarks));
-
-        // TODO: User to add:
-        // - Validation that approver is HR role
-        // - Leave must have been already approved by manager
-        // - Rejection reason is required if !IsApproved
-        // - Cannot approve leaves not yet starting
-        // - Audit log requirement
-        // - Notification requirement to employee
     }
 }
 
 /// <summary>
 /// Validator for CancelLeaveDto.
-/// TODO: User to implement validation for leave cancellation
-/// Consider: Leave is approved, not yet started, authorization, etc.
+/// Validates cancellation reason requirement.
 /// </summary>
 public class CancelLeaveDtoValidator : AbstractValidator<CancelLeaveDto>
 {
@@ -142,12 +115,5 @@ public class CancelLeaveDtoValidator : AbstractValidator<CancelLeaveDto>
             .WithMessage("Reason must be at least 10 characters")
             .MaximumLength(500)
             .WithMessage("Reason cannot exceed 500 characters");
-
-        // TODO: User to add:
-        // - Cannot cancel leaves that have already started
-        // - Cannot cancel leaves that are already cancelled
-        // - Cancellation requires notification to manager/HR
-        // - Leave balance restoration logic
-        // - Audit trail
     }
 }

@@ -31,11 +31,15 @@ public class Employee : AggregateRoot
     // Organization
     public Guid OrganizationId { get; set; }
     public virtual Organization? Organization { get; set; }
-
     // Authentication & Identity
     public string? IdentityProvider { get; set; } // "AzureAD", "Okta", "Custom", etc.
     public string? ExternalUserId { get; set; } // ID from external identity provider
+    
     public bool IsActive { get; set; } = true;
+
+    public string? Username { get; set; } // Local username for internal authentication (Phase 2.2)
+    public string? PasswordHash { get; set; } // Hashed password for local authentication (Phase 2.2)
+    
 
     // Additional Fields
     public string? ProfilePhotoUrl { get; set; }

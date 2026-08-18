@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using HRMS.Application.DTOs;
@@ -7,8 +8,10 @@ namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for leave request management.
-/// TODO: Add authorization checks (own request, manager, HR), workflow notifications
+/// Phase 2.2: Protected with [Authorize]. Resource-based and role-based checks to be added in Phase 3.
+/// TODO: Add role-based authorization (own request, manager, HR), workflow notifications, leave balance validation
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/leave")]
 [Tags("Leave")]
