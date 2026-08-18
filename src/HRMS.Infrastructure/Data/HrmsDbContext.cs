@@ -23,6 +23,11 @@ public class HrmsDbContext : DbContext
     public DbSet<UserRole> UserRoles => Set<UserRole>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+    // DbSets for Phase 2 entities (Payroll, Attendance, Leave)
+    public DbSet<PayrollRecord> PayrollRecords => Set<PayrollRecord>();
+    public DbSet<AttendanceLog> AttendanceLogs => Set<AttendanceLog>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -34,6 +39,11 @@ public class HrmsDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PermissionConfiguration());
         modelBuilder.ApplyConfiguration(new UserRoleConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogConfiguration());
+
+        // Phase 2: Payroll, Attendance, Leave configurations
+        modelBuilder.ApplyConfiguration(new PayrollRecordConfiguration());
+        modelBuilder.ApplyConfiguration(new AttendanceLogConfiguration());
+        modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
 
         // Global query filter to exclude soft-deleted entities
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())

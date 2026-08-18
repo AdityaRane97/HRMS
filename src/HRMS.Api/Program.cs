@@ -6,6 +6,8 @@ using FluentValidation;
 using HRMS.Infrastructure.Data;
 using HRMS.Api.Middleware;
 using HRMS.Api.Filters;
+using HRMS.Application.Services;
+using HRMS.Infrastructure.Services;
 using Serilog;
 using AutoMapper;
 
@@ -47,6 +49,11 @@ builder.Services.AddValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssembli
 // Register ICurrentUser implementation in HRMS.Api (populated per request)
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<HRMS.Application.Common.ICurrentUser, HRMS.Api.Identity.CurrentUser>();
+
+// Phase 2: Register Payroll, Attendance, Leave services (in-memory for Phase 2.1)
+builder.Services.AddScoped<IPayrollService, InMemoryPayrollService>();
+builder.Services.AddScoped<IAttendanceService, InMemoryAttendanceService>();
+builder.Services.AddScoped<ILeaveService, InMemoryLeaveService>();
 
 var app = builder.Build();
 
