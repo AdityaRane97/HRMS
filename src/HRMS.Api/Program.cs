@@ -42,7 +42,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // FluentValidation
-builder.Services.AddValidatorsFromAssemblyContaining(typeof(Program));
+builder.Services.AddValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
 // Register ICurrentUser implementation in HRMS.Api (populated per request)
 builder.Services.AddHttpContextAccessor();

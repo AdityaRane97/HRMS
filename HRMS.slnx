@@ -5,4 +5,7 @@
     <Project Path="src/HRMS.Domain/HRMS.Domain.csproj" />
     <Project Path="src/HRMS.Infrastructure/HRMS.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HRMS.UnitTests/HRMS.UnitTests.csproj" />
+  </Folder>
 </Solution>

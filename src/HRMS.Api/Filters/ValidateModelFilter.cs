@@ -69,7 +69,7 @@ public class ValidateModelFilter : IAsyncActionFilter
         if (errors.Count > 0)
         {
             _logger.LogWarning("Validation failed for request: {Errors}", string.Join("; ", errors.SelectMany(e => e.Value)));
-            throw new HRMS.Application.Exceptions.ValidationException(errors);
+            throw new Application.Exceptions.ValidationException(errors);
         }
 
         await next();
