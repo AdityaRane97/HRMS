@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using HRMS.Application.DTOs;
 using HRMS.Application.Services;
+using HRMS.Domain.Entities;
 
 namespace HRMS.Api.Controllers;
 

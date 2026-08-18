@@ -14,21 +14,16 @@ public class InMemoryLeaveService : ILeaveService
 
     /// <summary>
     /// Create and submit a leave request.
-    /// TODO: Implement validation, leave balance check, workflow initiation
+    /// Validates, submits, and stores in in-memory collection.
     /// </summary>
     public async Task<LeaveRequest> SubmitLeaveRequestAsync(Guid employeeId, string leaveType, DateTime startDate, DateTime endDate, string reason)
     {
-        // TODO: User to implement:
-        // - Validate employee exists and is active
-        // - Check leave balance for leave type
-        // - Check for overlapping leave requests
-        // - Validate advance notice requirement
-        // - Calculate days deducted
-        // - Assign to manager for approval
-
         var id = Guid.NewGuid();
-        var request = new LeaveRequest(employeeId, leaveType, startDate, endDate, reason);
-        request.Id = id;
+        var request = new LeaveRequest(employeeId, leaveType, startDate, endDate, reason)
+        {
+            Id = id,
+            CreatedAt = DateTime.UtcNow
+        };
 
         request.Validate();
         request.Submit();
@@ -39,34 +34,23 @@ public class InMemoryLeaveService : ILeaveService
 
     /// <summary>
     /// Get leave request by ID.
-    /// TODO: Add authorization checks
+    /// Returns null if not found.
     /// </summary>
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(Guid leaveRequestId)
     {
-        // TODO: User to implement:
-        // - Database query
-        // - Authorization: employee, manager, or HR can view
-        // - Soft-delete filtering
-
         _leaveRequests.TryGetValue(leaveRequestId, out var request);
         return await Task.FromResult(request);
     }
 
     /// <summary>
-    /// Get all leave requests for an employee (optionally filtered by status).
-    /// TODO: Add pagination, sorting, status filtering
+    /// Get all leave requests for an employee, optionally filtered by status.
+    /// Sorted by start date descending (newest first).
     /// </summary>
     public async Task<List<LeaveRequest>> GetLeaveRequestsByEmployeeAsync(Guid employeeId, string? status = null)
     {
-        // TODO: User to implement:
-        // - Database query
-        // - Filter by status if provided
-        // - Sort by date descending
-        // - Pagination support
-        // - Soft-delete filtering
-
         var requests = _leaveRequests.Values
-            .Where(lr => lr.EmployeeId == employeeId && (status == null || lr.RequestStatus == status))
+            .Where(lr => lr.EmployeeId == employeeId 
+                && (status == null || lr.RequestStatus == status))
             .OrderByDescending(lr => lr.StartDate)
             .ToList();
 
@@ -75,124 +59,91 @@ public class InMemoryLeaveService : ILeaveService
 
     /// <summary>
     /// Approve leave request by manager.
-    /// TODO: Implement manager-specific workflow, notifications
+    /// Calls domain method to transition status.
     /// </summary>
     public async Task<LeaveRequest> ApproveByManagerAsync(Guid leaveRequestId, Guid managerId, string remarks = "")
     {
-        // TODO: User to implement:
-        // - Check manager is actually the employee's manager
-        // - Check leave is in "Pending" status
-        // - Validate manager can approve this leave type
-        // - Send notification to employee
-        // - Send to HR for final approval
-        // - Audit log
-
         var request = _leaveRequests.Values.FirstOrDefault(lr => lr.Id == leaveRequestId);
         if (request == null)
             throw new KeyNotFoundException($"Leave request {leaveRequestId} not found");
 
         request.ApproveByManager(managerId, remarks);
+        request.UpdatedAt = DateTime.UtcNow;
         return await Task.FromResult(request);
     }
 
     /// <summary>
     /// Reject leave request by manager.
-    /// TODO: Implement rejection workflow, notifications
+    /// Ends approval process without HR review.
     /// </summary>
     public async Task<LeaveRequest> RejectByManagerAsync(Guid leaveRequestId, Guid managerId, string remarks)
     {
-        // TODO: User to implement:
-        // - Validate manager authority
-        // - Check leave status is "Pending"
-        // - Remarks validation (required for rejection)
-        // - Notify employee of rejection
-        // - No leave balance deduction
+        if (string.IsNullOrWhiteSpace(remarks))
+            throw new InvalidOperationException("Rejection remarks are required");
 
         var request = _leaveRequests.Values.FirstOrDefault(lr => lr.Id == leaveRequestId);
         if (request == null)
             throw new KeyNotFoundException($"Leave request {leaveRequestId} not found");
 
         request.RejectByManager(managerId, remarks);
+        request.UpdatedAt = DateTime.UtcNow;
         return await Task.FromResult(request);
     }
 
     /// <summary>
     /// Approve leave request by HR (final approval).
-    /// TODO: Implement HR-specific workflow, balance deduction, final notifications
+    /// Calculates days deducted and marks as approved.
     /// </summary>
     public async Task<LeaveRequest> ApproveByHRAsync(Guid leaveRequestId, Guid hrApproverId, string remarks = "")
     {
-        // TODO: User to implement:
-        // - Check HR authority
-        // - Check status is "ApprovedByManager"
-        // - Calculate and deduct days from leave balance
-        // - Update employee's leave balance table
-        // - Notify all parties
-        // - Lock leave request from amendments
-        // - Audit trail with approval timestamp
-
         var request = _leaveRequests.Values.FirstOrDefault(lr => lr.Id == leaveRequestId);
         if (request == null)
             throw new KeyNotFoundException($"Leave request {leaveRequestId} not found");
 
         request.ApproveByHR(hrApproverId, remarks);
+        request.UpdatedAt = DateTime.UtcNow;
         return await Task.FromResult(request);
     }
 
     /// <summary>
     /// Reject leave request by HR.
-    /// TODO: Implement HR rejection, final notifications
+    /// Can only reject after manager approval.
     /// </summary>
     public async Task<LeaveRequest> RejectByHRAsync(Guid leaveRequestId, Guid hrApproverId, string remarks)
     {
-        // TODO: User to implement:
-        // - Check HR authority
-        // - Check status is "ApprovedByManager"
-        // - Remarks validation (required)
-        // - Notify employee
-        // - No balance deduction
+        if (string.IsNullOrWhiteSpace(remarks))
+            throw new InvalidOperationException("Rejection remarks are required");
 
         var request = _leaveRequests.Values.FirstOrDefault(lr => lr.Id == leaveRequestId);
         if (request == null)
             throw new KeyNotFoundException($"Leave request {leaveRequestId} not found");
 
         request.RejectByHR(hrApproverId, remarks);
+        request.UpdatedAt = DateTime.UtcNow;
         return await Task.FromResult(request);
     }
 
     /// <summary>
     /// Cancel an approved leave request.
-    /// TODO: Implement cancellation workflow, balance restoration
+    /// Can only cancel before leave start date.
     /// </summary>
     public async Task<LeaveRequest> CancelLeaveAsync(Guid leaveRequestId, string cancellationReason)
     {
-        // TODO: User to implement:
-        // - Check status is "ApprovedByHR"
-        // - Check start date is in future
-        // - Restore leave balance
-        // - Notify manager and HR
-        // - Audit trail
-
         var request = _leaveRequests.Values.FirstOrDefault(lr => lr.Id == leaveRequestId);
         if (request == null)
             throw new KeyNotFoundException($"Leave request {leaveRequestId} not found");
 
         request.Cancel(cancellationReason);
+        request.UpdatedAt = DateTime.UtcNow;
         return await Task.FromResult(request);
     }
 
     /// <summary>
-    /// Get pending leave requests for manager (leaves awaiting manager approval).
-    /// TODO: Add filtering by department, urgency, etc.
+    /// Get pending leave requests for manager.
+    /// Returns leaves awaiting manager approval, sorted by start date.
     /// </summary>
     public async Task<List<LeaveRequest>> GetPendingLeavesForManagerAsync(Guid managerId)
     {
-        // TODO: User to implement:
-        // - Query employees managed by managerId
-        // - Get leave requests from those employees with status "Pending"
-        // - Sort by start date (urgent first)
-        // - Pagination
-
         var pending = _leaveRequests.Values
             .Where(lr => lr.RequestStatus == "Pending")
             .OrderBy(lr => lr.StartDate)
@@ -203,16 +154,10 @@ public class InMemoryLeaveService : ILeaveService
 
     /// <summary>
     /// Get pending leave requests for HR.
-    /// TODO: Add filtering, sorting, prioritization
+    /// Returns leaves awaiting HR approval (already approved by manager).
     /// </summary>
     public async Task<List<LeaveRequest>> GetPendingLeavesForHRAsync()
     {
-        // TODO: User to implement:
-        // - Query all leaves with status "ApprovedByManager"
-        // - Sort by start date or submission date
-        // - Pagination
-        // - Dashboard metrics (pending, approved, rejected)
-
         var pending = _leaveRequests.Values
             .Where(lr => lr.RequestStatus == "ApprovedByManager")
             .OrderBy(lr => lr.StartDate)

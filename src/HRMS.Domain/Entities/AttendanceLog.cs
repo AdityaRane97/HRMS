@@ -42,83 +42,74 @@ public class AttendanceLog : BaseEntity
 
     /// <summary>
     /// Record check-in time.
-    /// TODO: Implement check-in validation logic
-    /// Consider: Duplicate check-in prevention, time zone handling, biometric verification, etc.
+    /// Phase 2.1: Simple logging; no duplicate check-in prevention yet.
     /// </summary>
     public void CheckIn(DateTime checkInTime)
     {
-        // TODO: User to implement check-in logic
-        // Example logic seed:
-        // if (CheckInTime.HasValue) throw new Exception("Already checked in");
-        // CheckInTime = checkInTime;
+        if (CheckInTime.HasValue)
+            throw new InvalidOperationException("Employee has already checked in for this date");
 
-        throw new NotImplementedException("CheckIn must be implemented with your validation rules");
+        CheckInTime = checkInTime;
+        AttendanceStatus = "Present";
     }
 
     /// <summary>
     /// Record check-out time and calculate worked hours.
-    /// TODO: Implement check-out validation and hour calculation
-    /// Consider: CheckOut before CheckIn prevention, break deduction, minimum work hours, etc.
+    /// Validates checkout time is after check-in.
     /// </summary>
     public void CheckOut(DateTime checkOutTime)
     {
-        // TODO: User to implement check-out logic
-        // Example logic seed:
-        // if (!CheckInTime.HasValue) throw new Exception("Not checked in");
-        // if (checkOutTime < CheckInTime) throw new Exception("Invalid checkout time");
-        // CheckOutTime = checkOutTime;
-        // CalculateWorkedHours();
+        if (!CheckInTime.HasValue)
+            throw new InvalidOperationException("Employee has not checked in yet");
 
-        throw new NotImplementedException("CheckOut must be implemented with your validation rules");
+        if (checkOutTime < CheckInTime.Value)
+            throw new InvalidOperationException("Check-out time cannot be before check-in time");
+
+        CheckOutTime = checkOutTime;
+        CalculateWorkedHours();
     }
 
     /// <summary>
     /// Calculate worked hours from CheckInTime and CheckOutTime.
-    /// TODO: Implement hour calculation with break deduction logic
-    /// Consider: Break duration (lunch, coffee), rounding rules, decimal precision
+    /// Phase 2.1: Simple total - default 1-hour break deduction (lunch).
+    /// Future: Configurable break rules.
     /// </summary>
     public void CalculateWorkedHours()
     {
-        // TODO: User to implement worked hours calculation
-        // Example logic seed:
-        // if (CheckInTime.HasValue && CheckOutTime.HasValue)
-        // {
-        //     var totalMinutes = (CheckOutTime.Value - CheckInTime.Value).TotalMinutes;
-        //     var breakMinutes = 60; // Default 1-hour lunch break
-        //     WorkedHours = (decimal)(totalMinutes - breakMinutes) / 60;
-        //     WorkedHours = Math.Max(0, WorkedHours); // Ensure non-negative
-        // }
+        if (CheckInTime.HasValue && CheckOutTime.HasValue)
+        {
+            var totalMinutes = (CheckOutTime.Value - CheckInTime.Value).TotalMinutes;
+            var breakMinutes = 60; // Default 1-hour lunch break
+            var workedMinutes = totalMinutes - breakMinutes;
+            WorkedHours = (decimal)workedMinutes / 60;
 
-        throw new NotImplementedException("CalculateWorkedHours must be implemented");
+            // Ensure non-negative
+            if (WorkedHours < 0)
+                WorkedHours = 0;
+        }
     }
 
     /// <summary>
-    /// Mark attendance as approved by HR/Manager (for overrides or exceptions).
-    /// TODO: Implement approval logic
+    /// Mark attendance as approved by HR/Manager.
+    /// Used for manual overrides or exceptions.
     /// </summary>
     public void ApproveAttendance(Guid approverId, string remarks = "")
     {
-        // TODO: User to implement approval logic
-        // Example logic seed:
-        // ApprovedBy = approverId;
-        // ApprovedAt = DateTime.UtcNow;
-        // ApprovalRemarks = remarks;
-
-        throw new NotImplementedException("ApproveAttendance must be implemented");
+        ApprovedBy = approverId;
+        ApprovedAt = DateTime.UtcNow;
+        ApprovalRemarks = remarks;
     }
 
     /// <summary>
-    /// Check if attendance is late (arrival after standard office start time).
-    /// TODO: Implement late-arrival check with configurable office start time
+    /// Check if attendance is late.
+    /// Summary>
+    /// Check if attendance is late.
+    /// Phase 2.1: Deferred (user chose no late detection yet).
+    /// Returns false for now.
     /// </summary>
     public bool IsLateArrival()
     {
-        // TODO: User to implement late arrival check
-        // Example logic seed:
-        // var standardStartTime = new TimeSpan(9, 0, 0); // 9:00 AM
-        // if (!CheckInTime.HasValue) return false;
-        // return CheckInTime.Value.TimeOfDay > standardStartTime;
-
-        throw new NotImplementedException("IsLateArrival must be implemented");
+        // Phase 2.1: No late detection
+        return false;
     }
 }

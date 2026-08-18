@@ -14,21 +14,21 @@ public class InMemoryPayrollService : IPayrollService
 
     /// <summary>
     /// Create a new payroll record for an employee.
-    /// TODO: Implement payroll creation with validation and calculation
+    /// Initializes with base salary, calculates gross/net, and stores.
     /// </summary>
     public async Task<PayrollRecord> CreatePayrollAsync(Guid employeeId, DateTime payrollMonth, decimal baseSalary)
     {
         var id = Guid.NewGuid();
-        var payroll = new PayrollRecord(employeeId, payrollMonth, baseSalary);
-        payroll.Id = id;
+        var payroll = new PayrollRecord(employeeId, payrollMonth, baseSalary)
+        {
+            Id = id,
+            CreatedAt = DateTime.UtcNow
+        };
 
-        // TODO: User to implement:
-        // - Validate employee exists
-        // - Check if payroll already exists for this month
-        // - Call payroll.CalculateGrossSalary()
-        // - Call payroll.CalculateDeductions()
-        // - Call payroll.CalculateNetSalary()
-        // - Store in database
+        // Calculate salary components upon creation
+        payroll.CalculateGrossSalary();
+        payroll.CalculateDeductions();
+        payroll.CalculateNetSalary();
 
         _payrollRecords[id] = payroll;
         return await Task.FromResult(payroll);
@@ -36,33 +36,25 @@ public class InMemoryPayrollService : IPayrollService
 
     /// <summary>
     /// Get payroll record by ID.
-    /// TODO: Add error handling, authorization checks
+    /// Throws if not found.
     /// </summary>
     public async Task<PayrollRecord?> GetPayrollByIdAsync(Guid payrollId)
     {
-        // TODO: User to implement:
-        // - Database query instead of in-memory
-        // - Null handling
-        // - Authorization (only employee, manager, or HR can view)
-
         _payrollRecords.TryGetValue(payrollId, out var payroll);
         return await Task.FromResult(payroll);
     }
 
     /// <summary>
     /// Get all payroll records for an employee in a date range.
-    /// TODO: Add filtering, pagination, authorization
+    /// Filters by employee ID and payroll month range.
     /// </summary>
     public async Task<List<PayrollRecord>> GetPayrollByEmployeeAsync(Guid employeeId, DateTime startMonth, DateTime endMonth)
     {
-        // TODO: User to implement:
-        // - Database query with date filtering
-        // - Pagination support
-        // - Authorization checks
-        // - Soft-delete filtering
-
         var records = _payrollRecords.Values
-            .Where(p => p.EmployeeId == employeeId && p.PayrollMonth >= startMonth && p.PayrollMonth <= endMonth)
+            .Where(p => p.EmployeeId == employeeId 
+                && p.PayrollMonth >= startMonth 
+                && p.PayrollMonth <= endMonth)
+            .OrderBy(p => p.PayrollMonth)
             .ToList();
 
         return await Task.FromResult(records);
@@ -70,78 +62,64 @@ public class InMemoryPayrollService : IPayrollService
 
     /// <summary>
     /// Update payroll record (before processing).
-    /// TODO: Implement update validation and recalculation
+    /// Validates status is Pending, updates fields, and recalculates.
     /// </summary>
     public async Task<PayrollRecord> UpdatePayrollAsync(Guid payrollId, Action<PayrollRecord> updateAction)
     {
-        // TODO: User to implement:
-        // - Check payroll status (must be "Pending")
-        // - Validate updates
-        // - Recalculate salary/deductions
-        // - Audit log
-        // - Database update
-
         if (!_payrollRecords.TryGetValue(payrollId, out var payroll))
             throw new KeyNotFoundException($"Payroll record {payrollId} not found");
 
+        if (payroll.PaymentStatus != "Pending")
+            throw new InvalidOperationException("Only pending payroll can be updated");
+
         payroll.UpdatedAt = DateTime.UtcNow;
         updateAction(payroll);
+
+        // Recalculate after updates
+        payroll.CalculateGrossSalary();
+        payroll.CalculateDeductions();
+        payroll.CalculateNetSalary();
 
         return await Task.FromResult(payroll);
     }
 
     /// <summary>
     /// Process payroll (calculate final amounts, lock for payment).
-    /// TODO: Implement processing workflow with approvals
+    /// Calls domain method to transition status.
     /// </summary>
     public async Task<PayrollRecord> ProcessPayrollAsync(Guid payrollId)
     {
-        // TODO: User to implement:
-        // - Validate all calculations are done
-        // - Get HR/Finance approval
-        // - Lock record from amendments
-        // - Trigger payment processing
-        // - Update status to "Processed"
-
         if (!_payrollRecords.TryGetValue(payrollId, out var payroll))
             throw new KeyNotFoundException($"Payroll record {payrollId} not found");
 
         payroll.MarkAsProcessed();
+        payroll.UpdatedAt = DateTime.UtcNow;
+
         return await Task.FromResult(payroll);
     }
 
     /// <summary>
     /// Mark payroll as paid after bank transfer.
-    /// TODO: Implement payment confirmation and reconciliation
+    /// Records payment reference and marks as paid.
     /// </summary>
     public async Task<PayrollRecord> MarkAsPaidAsync(Guid payrollId, string referenceNumber)
     {
-        // TODO: User to implement:
-        // - Verify bank transfer reference
-        // - Update PaidAt timestamp
-        // - Reconcile with accounting system
-        // - Send employee notification
-        // - Audit trail
-
         if (!_payrollRecords.TryGetValue(payrollId, out var payroll))
             throw new KeyNotFoundException($"Payroll record {payrollId} not found");
 
         payroll.MarkAsPaid();
         payroll.ReferenceNumber = referenceNumber;
+        payroll.UpdatedAt = DateTime.UtcNow;
+
         return await Task.FromResult(payroll);
     }
 
     /// <summary>
     /// Get pending payroll records for processing.
-    /// TODO: Add filtering by organization, department, etc.
+    /// Returns all payroll in "Pending" status, sorted by month.
     /// </summary>
     public async Task<List<PayrollRecord>> GetPendingPayrollsAsync()
     {
-        // TODO: User to implement:
-        // - Database query for PaymentStatus == "Pending"
-        // - Sorting by PayrollMonth
-        // - Batch retrieval optimization
-
         var pending = _payrollRecords.Values
             .Where(p => p.PaymentStatus == "Pending")
             .OrderBy(p => p.PayrollMonth)

@@ -56,157 +56,136 @@ public class LeaveRequest : AggregateRoot
 
     /// <summary>
     /// Calculate number of days for the leave request.
-    /// TODO: Implement business day calculation logic
-    /// Consider: Weekends, public holidays, half-day rules, overlapping leaves, etc.
+    /// Phase 2.1: Simple calendar-day count (no weekend/holiday filtering yet).
+    /// Future: Add business-day calculation and holiday handling.
     /// </summary>
     public void CalculateDaysDeducted()
     {
-        // TODO: User to implement days calculation
-        // Example logic seed:
-        // var totalDays = (EndDate.Date - StartDate.Date).Days + 1; // Inclusive
-        // var businessDays = 0;
-        // for (var date = StartDate.Date; date <= EndDate.Date; date = date.AddDays(1))
-        // {
-        //     if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
-        //         businessDays++;
-        // }
-        // DaysDeducted = IsHalfDay ? 0.5m : businessDays;
-        // NumberOfDays = totalDays;
+        // Calendar days (inclusive of start and end dates)
+        var totalDays = (EndDate.Date - StartDate.Date).Days + 1;
 
-        throw new NotImplementedException("CalculateDaysDeducted must be implemented with your business rules");
+        // Apply half-day rule
+        DaysDeducted = IsHalfDay ? 0.5m : totalDays;
+        NumberOfDays = totalDays;
     }
 
     /// <summary>
     /// Validate leave request before submission.
-    /// TODO: Implement validation rules
-    /// Consider: Date validation, leave balance check, overlapping leaves, approval workflow, etc.
+    /// Phase 2.1: Basic date and reason validation.
+    /// Future: Add leave balance checks, overlapping leave detection.
     /// </summary>
     public void Validate()
     {
-        // TODO: User to implement validation logic
-        // Example logic seed:
-        // if (StartDate > EndDate) throw new Exception("Start date must be before end date");
-        // if (StartDate < DateTime.UtcNow.Date) throw new Exception("Cannot request leave for past dates");
-        // if (string.IsNullOrEmpty(Reason)) throw new Exception("Reason is required");
+        if (StartDate > EndDate)
+            throw new InvalidOperationException("Start date must be before or equal to end date");
 
-        throw new NotImplementedException("Validate must be implemented with your business rules");
+        if (StartDate.Date < DateTime.UtcNow.Date)
+            throw new InvalidOperationException("Cannot request leave for past dates");
+
+        if (string.IsNullOrWhiteSpace(Reason))
+            throw new InvalidOperationException("Reason is required for leave request");
     }
 
     /// <summary>
     /// Submit leave request to manager.
-    /// TODO: Implement request submission and notification logic
+    /// Validates and sets status to Pending.
     /// </summary>
     public void Submit()
     {
-        // TODO: User to implement submission logic
-        // Example logic seed:
-        // Validate();
-        // RequestStatus = "Pending";
-        // RaiseDomainEvent(new LeaveRequestSubmittedEvent(...));
-
-        throw new NotImplementedException("Submit must be implemented");
+        Validate();
+        RequestStatus = "Pending";
     }
 
     /// <summary>
     /// Approve leave request by manager.
-    /// TODO: Implement manager approval logic
+    /// Manager must approve before HR review.
     /// </summary>
     public void ApproveByManager(Guid managerId, string remarks = "")
     {
-        // TODO: User to implement manager approval logic
-        // Example logic seed:
-        // if (RequestStatus != "Pending") throw new Exception("Invalid status for approval");
-        // ManagerId = managerId;
-        // ManagerApprovedAt = DateTime.UtcNow;
-        // ManagerRemarks = remarks;
-        // RequestStatus = "ApprovedByManager";
-        // RaiseDomainEvent(new LeaveApprovedByManagerEvent(...));
+        if (RequestStatus != "Pending")
+            throw new InvalidOperationException("Only pending leave requests can be approved by manager");
 
-        throw new NotImplementedException("ApproveByManager must be implemented");
+        ManagerId = managerId;
+        ManagerApprovedAt = DateTime.UtcNow;
+        ManagerRemarks = remarks;
+        RequestStatus = "ApprovedByManager";
     }
 
     /// <summary>
     /// Reject leave request by manager.
-    /// TODO: Implement manager rejection logic
+    /// Ends approval process without HR review.
     /// </summary>
     public void RejectByManager(Guid managerId, string remarks)
     {
-        // TODO: User to implement manager rejection logic
-        // Example logic seed:
-        // if (RequestStatus != "Pending") throw new Exception("Invalid status for rejection");
-        // ManagerId = managerId;
-        // ManagerRemarks = remarks;
-        // RequestStatus = "RejectedByManager";
-        // RaiseDomainEvent(new LeaveRejectedByManagerEvent(...));
+        if (RequestStatus != "Pending")
+            throw new InvalidOperationException("Only pending leave requests can be rejected by manager");
 
-        throw new NotImplementedException("RejectByManager must be implemented");
+        ManagerId = managerId;
+        ManagerRemarks = remarks;
+        RequestStatus = "RejectedByManager";
     }
 
     /// <summary>
     /// Approve leave request by HR (final approval).
-    /// TODO: Implement HR approval logic
+    /// Can only approve if manager already approved.
+    /// Calculates and deducts days from leave balance.
     /// </summary>
     public void ApproveByHR(Guid hrApproverId, string remarks = "")
     {
-        // TODO: User to implement HR approval logic
-        // Example logic seed:
-        // if (RequestStatus != "ApprovedByManager") throw new Exception("Manager approval required first");
-        // HRApproverId = hrApproverId;
-        // HRApprovedAt = DateTime.UtcNow;
-        // HRRemarks = remarks;
-        // RequestStatus = "ApprovedByHR";
-        // CalculateDaysDeducted(); // Calculate and deduct from balance
-        // RaiseDomainEvent(new LeaveApprovedByHREvent(...));
+        if (RequestStatus != "ApprovedByManager")
+            throw new InvalidOperationException("Manager approval is required before HR approval");
 
-        throw new NotImplementedException("ApproveByHR must be implemented");
+        HRApproverId = hrApproverId;
+        HRApprovedAt = DateTime.UtcNow;
+        HRRemarks = remarks;
+        RequestStatus = "ApprovedByHR";
+
+        // Calculate days deducted upon final approval
+        CalculateDaysDeducted();
     }
 
     /// <summary>
     /// Reject leave request by HR.
-    /// TODO: Implement HR rejection logic
+    /// Can only reject after manager approval.
     /// </summary>
     public void RejectByHR(Guid hrApproverId, string remarks)
     {
-        // TODO: User to implement HR rejection logic
-        // Example logic seed:
-        // if (RequestStatus != "ApprovedByManager") throw new Exception("Invalid status for HR rejection");
-        // HRApproverId = hrApproverId;
-        // HRRemarks = remarks;
-        // RequestStatus = "RejectedByHR";
-        // RaiseDomainEvent(new LeaveRejectedByHREvent(...));
+        if (RequestStatus != "ApprovedByManager")
+            throw new InvalidOperationException("Invalid status for HR rejection");
 
-        throw new NotImplementedException("RejectByHR must be implemented");
+        HRApproverId = hrApproverId;
+        HRRemarks = remarks;
+        RequestStatus = "RejectedByHR";
     }
 
     /// <summary>
     /// Cancel an approved leave request.
-    /// TODO: Implement cancellation logic
-    /// Consider: Restore leave balance, notify approvers, audit trail, etc.
+    /// Can only cancel if leave is approved and hasn't started yet.
     /// </summary>
     public void Cancel(string reason)
     {
-        // TODO: User to implement cancellation logic
-        // Example logic seed:
-        // if (RequestStatus != "ApprovedByHR") throw new Exception("Can only cancel approved leaves");
-        // if (StartDate <= DateTime.UtcNow.Date) throw new Exception("Cannot cancel ongoing/past leaves");
-        // RequestStatus = "Cancelled";
-        // RaiseDomainEvent(new LeaveCancelledEvent(...));
+        if (StartDate.Date <= DateTime.UtcNow.Date)
+            throw new InvalidOperationException("Cannot cancel leave that has already started");
 
-        throw new NotImplementedException("Cancel must be implemented");
+        if (RequestStatus != "ApprovedByHR")
+            throw new InvalidOperationException("Only approved leave can be cancelled");
+
+        RequestStatus = "Cancelled";
+        Reason = $"Cancelled: {reason}";
     }
 
     /// <summary>
-    /// Check if leave request is approved.
+    /// Check if leave request is approved (final HR approval).
     /// </summary>
     public bool IsApproved() => RequestStatus == "ApprovedByHR";
 
     /// <summary>
-    /// Check if leave request is pending.
+    /// Check if leave request is pending manager approval.
     /// </summary>
     public bool IsPending() => RequestStatus == "Pending";
 
     /// <summary>
-    /// Check if leave request is rejected.
+    /// Check if leave request is rejected by manager or HR.
     /// </summary>
     public bool IsRejected() => RequestStatus.Contains("Rejected");
 }

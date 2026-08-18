@@ -55,68 +55,63 @@ public class PayrollRecord : BaseEntity
     }
 
     /// <summary>
-    /// Calculate gross salary from allowances.
-    /// TODO: Implement allowance calculation logic
-    /// Consider: Additional allowances, bonus, incentives, performance bonuses, etc.
+    /// Calculate gross salary from base + allowances.
+    /// Deduction strategy deferred to Employee configuration (Phase 2.1).
     /// </summary>
     public void CalculateGrossSalary()
     {
-        // TODO: User to implement gross salary calculation
-        // Example logic seed:
-        // GrossSalary = BaseSalary + HouseRentAllowance + MedicalAllowance + TransportAllowance + OtherAllowances;
-
-        throw new NotImplementedException("CalculateGrossSalary must be implemented with your allowance rules");
+        GrossSalary = BaseSalary 
+            + HouseRentAllowance 
+            + MedicalAllowance 
+            + TransportAllowance 
+            + OtherAllowances;
     }
 
     /// <summary>
     /// Calculate total deductions.
-    /// TODO: Implement deduction calculation logic
-    /// Consider: Tax brackets, progressive taxation, statutory deductions, optional deductions, etc.
+    /// Phase 2.1: Deductions stored as-is (from pre-configuration or UI input).
+    /// Future: Implement dynamic deduction rules from Employee config.
     /// </summary>
     public void CalculateDeductions()
     {
-        // TODO: User to implement deduction calculation
-        // Example logic seed:
-        // TotalDeductions = IncomeTax + ProvidentFund + HealthInsurance + OtherDeductions;
-
-        throw new NotImplementedException("CalculateDeductions must be implemented with your deduction rules");
+        TotalDeductions = IncomeTax + ProvidentFund + HealthInsurance + OtherDeductions;
     }
 
     /// <summary>
     /// Calculate net salary (GrossSalary - TotalDeductions).
-    /// TODO: Call this after CalculateGrossSalary and CalculateDeductions
+    /// Call after CalculateGrossSalary() and CalculateDeductions().
     /// </summary>
     public void CalculateNetSalary()
     {
-        // TODO: User to implement net salary calculation
-        // Example logic seed:
-        // NetSalary = GrossSalary - TotalDeductions;
-        // Ensure NetSalary is never negative
-
-        throw new NotImplementedException("CalculateNetSalary must be implemented");
+        NetSalary = GrossSalary - TotalDeductions;
+        // Ensure net is not negative (fail-safe)
+        if (NetSalary < 0)
+            NetSalary = 0;
     }
 
     /// <summary>
-    /// Mark payroll as processed.
-    /// TODO: Add validation (all calculations done, approvals obtained, etc.)
+    /// Mark payroll as processed (ready for payment).
+    /// Sets PaymentStatus to "Processed" and records timestamp.
     /// </summary>
     public void MarkAsProcessed()
     {
-        // TODO: User to implement processing logic
-        // Consider: Validation, audit log, notification, etc.
+        if (PaymentStatus != "Pending")
+            throw new InvalidOperationException("Only pending payroll can be marked as processed");
 
-        throw new NotImplementedException("MarkAsProcessed must be implemented");
+        PaymentStatus = "Processed";
+        ProcessedAt = DateTime.UtcNow;
     }
 
     /// <summary>
     /// Mark payroll as paid.
-    /// TODO: Add payment confirmation logic
+    /// Sets PaymentStatus to "Paid" and records payment timestamp.
     /// </summary>
     public void MarkAsPaid()
     {
-        // TODO: User to implement payment confirmation logic
-        // Consider: Update PaidAt, verify bank transfer, etc.
+        if (PaymentStatus != "Processed")
+            throw new InvalidOperationException("Only processed payroll can be marked as paid");
 
-        throw new NotImplementedException("MarkAsPaid must be implemented");
+        PaymentStatus = "Paid";
+        PaidAt = DateTime.UtcNow;
     }
 }
