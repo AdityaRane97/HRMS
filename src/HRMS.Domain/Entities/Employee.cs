@@ -48,7 +48,8 @@ public class Employee : AggregateRoot
     public string? State { get; set; }
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
-
+    // Authorization
+    public string Role { get; set; } = "Employee";
     public Employee()
     {
     }
@@ -87,6 +88,13 @@ public class Employee : AggregateRoot
     /// <summary>
     /// Check if employee is actively employed.
     /// </summary>
-    public bool IsCurrentlyEmployed() 
-        => IsActive && EmploymentStatus == "Active" && ResignationDate is null;
+    /// <summary>
+    /// Check if employee is actively employed.
+    /// </summary>
+    public bool IsCurrentlyEmployed()
+        => IsActive &&
+           EmploymentStatus == "Active" &&
+           ResignationDate is null;
+
+    
 }

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
+using HRMS.Application.Constants;
 using HRMS.Application.DTOs;
 using HRMS.Application.Services;
 using HRMS.Domain.Entities;
@@ -9,8 +10,7 @@ namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for payroll management.
-/// Phase 2.2: Protected with [Authorize]. HR-role checks to be added in Phase 3.
-/// TODO: Add role-based authorization (HR only), caching, pagination
+/// Phase 2.3: Role-Based and resource-level authorization applied.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -19,150 +19,216 @@ namespace HRMS.Api.Controllers;
 public class PayrollController : ControllerBase
 {
     private readonly IPayrollService _payrollService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
     private readonly ILogger<PayrollController> _logger;
 
-    public PayrollController(IPayrollService payrollService, IMapper mapper, ILogger<PayrollController> logger)
+    public PayrollController(
+        IPayrollService payrollService,
+        ICurrentUserService currentUserService,
+        IMapper mapper,
+        ILogger<PayrollController> logger)
     {
         _payrollService = payrollService;
+        _currentUserService = currentUserService;
         _mapper = mapper;
         _logger = logger;
     }
 
     /// <summary>
-    /// Create new payroll record for employee.
-    /// TODO: Add [Authorize(Roles = "HR,Admin")] attribute
-    /// TODO: Add employee existence validation
+    /// Gets the currently authenticated user ID from JWT claims.
     /// </summary>
-    [HttpPost]
-    public async Task<ActionResult<PayrollRecordDto>> CreatePayroll([FromBody] CreatePayrollRecordDto dto)
+    private Guid? TryGetCurrentUserId()
     {
-        // TODO: User to implement:
-        // - Validate employee exists
-        // - Check duplicate payroll for month
-        // - Call service
-        // - Log creation event
-        // - Return 201 Created
+        return _currentUserService.UserId;
+    }
 
-        var domain = _mapper.Map<PayrollRecord>(dto);
-        var result = await _payrollService.CreatePayrollAsync(dto.EmployeeId, dto.PayrollMonth, dto.BaseSalary);
+    /// <summary>
+    /// Determines whether the current user has privileged payroll access.
+    /// HR and Admin can access payroll records for any employee.
+    /// </summary>
+    private bool HasPrivilegedPayrollAccess()
+    {
+        return _currentUserService.IsInRole(RoleConstants.HR) ||
+               _currentUserService.IsInRole(RoleConstants.Admin);
+    }
+
+    /// <summary>
+    /// Create new payroll record for an employee.
+    /// HR and Admin only.
+    /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
+    [HttpPost]
+    public async Task<ActionResult<PayrollRecordDto>> CreatePayroll(
+        [FromBody] CreatePayrollRecordDto dto)
+    {
+        var result = await _payrollService.CreatePayrollAsync(
+            dto.EmployeeId,
+            dto.PayrollMonth,
+            dto.BaseSalary);
+
         var response = _mapper.Map<PayrollRecordDto>(result);
 
-        return CreatedAtAction(nameof(GetPayrollById), new { id = response.Id }, response);
+        return CreatedAtAction(
+            nameof(GetPayrollById),
+            new { id = response.Id },
+            response);
     }
 
     /// <summary>
     /// Get payroll record by ID.
-    /// TODO: Add authorization (own record, manager, HR)
+    /// Employees can access only their own payroll.
+    /// HR and Admin can access any payroll record.
     /// </summary>
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<PayrollRecordDto>> GetPayrollById(Guid id)
     {
-        // TODO: User to implement:
-        // - Call service
-        // - Check authorization
-        // - Return 404 if not found
-        // - Add caching
+        var currentUserId = TryGetCurrentUserId();
+
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
 
         var payroll = await _payrollService.GetPayrollByIdAsync(id);
+
         if (payroll == null)
+        {
             return NotFound();
+        }
+
+        var canAccess =
+            payroll.EmployeeId == currentUserId.Value ||
+            HasPrivilegedPayrollAccess();
+
+        if (!canAccess)
+        {
+            return Forbid();
+        }
 
         return Ok(_mapper.Map<PayrollRecordDto>(payroll));
     }
 
     /// <summary>
-    /// Get payroll records for employee in date range.
-    /// TODO: Add pagination, sorting, date validation
+    /// Get payroll records for an employee in a date range.
+    /// Employees can access only their own payroll records.
+    /// HR and Admin can access any employee's payroll records.
     /// </summary>
     [HttpGet("employee/{employeeId:guid}")]
-    public async Task<ActionResult<List<PayrollRecordDto>>> GetPayrollByEmployee(Guid employeeId, [FromQuery] DateTime? startMonth, [FromQuery] DateTime? endMonth)
+    public async Task<ActionResult<List<PayrollRecordDto>>> GetPayrollByEmployee(
+        Guid employeeId,
+        [FromQuery] DateTime? startMonth,
+        [FromQuery] DateTime? endMonth)
     {
-        // TODO: User to implement:
-        // - Validate date range
-        // - Add pagination
-        // - Add sorting (date desc)
-        // - Check authorization
+        var currentUserId = TryGetCurrentUserId();
+
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var canAccess =
+            employeeId == currentUserId.Value ||
+            HasPrivilegedPayrollAccess();
+
+        if (!canAccess)
+        {
+            return Forbid();
+        }
 
         startMonth ??= DateTime.UtcNow.AddMonths(-3);
         endMonth ??= DateTime.UtcNow;
 
-        var payrolls = await _payrollService.GetPayrollByEmployeeAsync(employeeId, startMonth.Value, endMonth.Value);
+        var payrolls = await _payrollService.GetPayrollByEmployeeAsync(
+            employeeId,
+            startMonth.Value,
+            endMonth.Value);
+
         return Ok(_mapper.Map<List<PayrollRecordDto>>(payrolls));
     }
 
     /// <summary>
     /// Update payroll record.
-    /// TODO: Add status validation (only Pending allowed)
+    /// HR and Admin only.
     /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<PayrollRecordDto>> UpdatePayroll(Guid id, [FromBody] UpdatePayrollRecordDto dto)
+    public async Task<ActionResult<PayrollRecordDto>> UpdatePayroll(
+        Guid id,
+        [FromBody] UpdatePayrollRecordDto dto)
     {
-        // TODO: User to implement:
-        // - Check status is "Pending"
-        // - Validate updates
-        // - Call service
-        // - Trigger recalculation
+        var updated = await _payrollService.UpdatePayrollAsync(
+            id,
+            payroll =>
+            {
+                if (dto.PaymentDate.HasValue)
+                {
+                    payroll.PaymentDate = dto.PaymentDate.Value;
+                }
 
-        var updated = await _payrollService.UpdatePayrollAsync(id, payroll =>
-        {
-            if (dto.PaymentDate.HasValue) payroll.PaymentDate = dto.PaymentDate.Value;
-            if (dto.HouseRentAllowance.HasValue) payroll.HouseRentAllowance = dto.HouseRentAllowance.Value;
-            if (dto.MedicalAllowance.HasValue) payroll.MedicalAllowance = dto.MedicalAllowance.Value;
-            // TODO: User to add remaining field updates
-        });
+                if (dto.HouseRentAllowance.HasValue)
+                {
+                    payroll.HouseRentAllowance =
+                        dto.HouseRentAllowance.Value;
+                }
+
+                if (dto.MedicalAllowance.HasValue)
+                {
+                    payroll.MedicalAllowance =
+                        dto.MedicalAllowance.Value;
+                }
+            });
 
         return Ok(_mapper.Map<PayrollRecordDto>(updated));
     }
 
     /// <summary>
-    /// Process payroll (lock and prepare for payment).
-    /// TODO: Add HR/Finance authorization, approval workflow
+    /// Process payroll.
+    /// HR and Admin only.
     /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
     [HttpPost("{id:guid}/process")]
     public async Task<ActionResult<PayrollRecordDto>> ProcessPayroll(Guid id)
     {
-        // TODO: User to implement:
-        // - Check authorization (HR/Finance only)
-        // - Validate calculations complete
-        // - Call service
-        // - Trigger notifications
-        // - Log audit event
-
         var processed = await _payrollService.ProcessPayrollAsync(id);
+
         return Ok(_mapper.Map<PayrollRecordDto>(processed));
     }
 
     /// <summary>
     /// Mark payroll as paid.
-    /// TODO: Add bank reference validation, reconciliation
+    /// HR and Admin only.
     /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
     [HttpPost("{id:guid}/pay")]
-    public async Task<ActionResult<PayrollRecordDto>> MarkAsPaid(Guid id, [FromBody] string referenceNumber)
+    public async Task<ActionResult<PayrollRecordDto>> MarkAsPaid(
+        Guid id,
+        [FromBody] string referenceNumber)
     {
-        // TODO: User to implement:
-        // - Validate reference number format
-        // - Call service
-        // - Reconcile with accounting
-        // - Send employee notification
+        var paid = await _payrollService.MarkAsPaidAsync(
+            id,
+            referenceNumber);
 
-        var paid = await _payrollService.MarkAsPaidAsync(id, referenceNumber);
         return Ok(_mapper.Map<PayrollRecordDto>(paid));
     }
 
     /// <summary>
-    /// Get all pending payrolls.
-    /// TODO: Add filtering, pagination, HR-only authorization
+    /// Get all pending payroll records.
+    /// HR and Admin only.
     /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
     [HttpGet("pending")]
-    public async Task<ActionResult<List<PayrollRecordDto>>> GetPendingPayrolls()
+    public async Task<ActionResult<List<PayrollRecordDto>>>
+        GetPendingPayrolls()
     {
-        // TODO: User to implement:
-        // - Check HR authorization
-        // - Add pagination
-        // - Add batch processing
-
         var pending = await _payrollService.GetPendingPayrollsAsync();
+
         return Ok(_mapper.Map<List<PayrollRecordDto>>(pending));
     }
 }

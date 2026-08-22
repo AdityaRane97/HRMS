@@ -1,16 +1,12 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
+using HRMS.Application.Constants;
 using HRMS.Application.DTOs;
 using HRMS.Application.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HRMS.Api.Controllers;
 
-/// <summary>
-/// API endpoints for leave request management.
-/// Phase 2.2: Protected with [Authorize]. Resource-based and role-based checks to be added in Phase 3.
-/// TODO: Add role-based authorization (own request, manager, HR), workflow notifications, leave balance validation
-/// </summary>
 [Authorize]
 [ApiController]
 [Route("api/leave")]
@@ -18,167 +14,349 @@ namespace HRMS.Api.Controllers;
 public class LeaveController : ControllerBase
 {
     private readonly ILeaveService _leaveService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
     private readonly ILogger<LeaveController> _logger;
 
-    public LeaveController(ILeaveService leaveService, IMapper mapper, ILogger<LeaveController> logger)
+    public LeaveController(
+        ILeaveService leaveService,
+        ICurrentUserService currentUserService,
+        IMapper mapper,
+        ILogger<LeaveController> logger)
     {
         _leaveService = leaveService;
+        _currentUserService = currentUserService;
         _mapper = mapper;
         _logger = logger;
     }
 
     /// <summary>
-    /// Submit a new leave request.
-    /// TODO: Add leave balance validation, notification to manager
+    /// Gets the currently authenticated user ID from the JWT claims.
+    /// </summary>
+    private Guid? TryGetCurrentUserId()
+    {
+        return _currentUserService.UserId;
+    }
+
+    /// <summary>
+    /// Submit a leave request.
+    /// The employee ID is always taken from the authenticated JWT.
     /// </summary>
     [HttpPost]
-    public async Task<ActionResult<LeaveRequestDto>> SubmitLeaveRequest([FromBody] CreateLeaveRequestDto dto)
+    public async Task<ActionResult<LeaveRequestDto>> CreateLeaveRequest(
+        [FromBody] CreateLeaveRequestDto dto)
     {
-        // TODO: User to implement:
-        // - Validate employee exists
-        // - Check leave balance
-        // - Validate advance notice
-        // - Call service
-        // - Send notification to manager
+        var currentUserId = TryGetCurrentUserId();
+
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
 
         var result = await _leaveService.SubmitLeaveRequestAsync(
-            dto.EmployeeId,
+            currentUserId.Value,
             dto.LeaveType,
             dto.StartDate,
             dto.EndDate,
-            dto.Reason
-        );
+            dto.Reason);
 
-        return CreatedAtAction(nameof(GetLeaveRequestById), new { id = result.Id }, _mapper.Map<LeaveRequestDto>(result));
+        return CreatedAtAction(
+            nameof(GetLeaveRequestById),
+            new { id = result.Id },
+            _mapper.Map<LeaveRequestDto>(result));
     }
 
     /// <summary>
     /// Get leave request by ID.
-    /// TODO: Add authorization (own request, manager, HR)
+    /// Employees can access only their own requests.
+    /// HR and Admin can access any request.
     /// </summary>
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<LeaveRequestDto>> GetLeaveRequestById(Guid id)
+    public async Task<ActionResult<LeaveRequestDto>> GetLeaveRequestById(
+        Guid id)
     {
-        // TODO: User to implement:
-        // - Check authorization
-        // - Call service
-        // - Handle not found
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = await _leaveService.GetLeaveRequestByIdAsync(id);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _leaveService.GetLeaveRequestByIdAsync(id);
+
         if (result == null)
+        {
             return NotFound();
+        }
+
+        var canAccess =
+            result.EmployeeId == currentUserId.Value ||
+            _currentUserService.IsInRole(RoleConstants.HR) ||
+            _currentUserService.IsInRole(RoleConstants.Admin);
+
+        if (!canAccess)
+        {
+            return Forbid();
+        }
 
         return Ok(_mapper.Map<LeaveRequestDto>(result));
     }
 
     /// <summary>
-    /// Get all leave requests for employee.
-    /// TODO: Add filtering by status, pagination
+    /// Get leave requests for an employee.
+    /// Employees can access only their own requests.
+    /// HR and Admin can access any employee's requests.
     /// </summary>
     [HttpGet("employee/{employeeId:guid}")]
-    public async Task<ActionResult<List<LeaveRequestDto>>> GetLeaveRequestsByEmployee(Guid employeeId, [FromQuery] string? status = null)
+    public async Task<ActionResult<IEnumerable<LeaveRequestDto>>>
+        GetLeaveRequestsByEmployee(
+            Guid employeeId,
+            [FromQuery] string? status = null)
     {
-        // TODO: User to implement:
-        // - Check authorization
-        // - Add pagination
-        // - Add sorting
+        var currentUserId = TryGetCurrentUserId();
 
-        var results = await _leaveService.GetLeaveRequestsByEmployeeAsync(employeeId, status);
-        return Ok(_mapper.Map<List<LeaveRequestDto>>(results));
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var canAccess =
+            employeeId == currentUserId.Value ||
+            _currentUserService.IsInRole(RoleConstants.HR) ||
+            _currentUserService.IsInRole(RoleConstants.Admin);
+
+        if (!canAccess)
+        {
+            return Forbid();
+        }
+
+        var result =
+            await _leaveService.GetLeaveRequestsByEmployeeAsync(
+                employeeId,
+                status);
+
+        return Ok(_mapper.Map<List<LeaveRequestDto>>(result));
     }
 
     /// <summary>
-    /// Manager approves leave request.
-    /// TODO: Add manager authorization, notification to employee and HR
+    /// Approve leave request by manager.
+    /// The approver ID is always taken from the authenticated JWT.
     /// </summary>
+    [Authorize(Roles = RoleConstants.ManagerHROrAdmin)]
     [HttpPost("{id:guid}/approve-manager")]
-    public async Task<ActionResult<LeaveRequestDto>> ApproveByManager(Guid id, [FromBody] ApproveLeaveByManagerDto dto)
+    public async Task<ActionResult<LeaveRequestDto>> ApproveByManager(
+        Guid id,
+        [FromBody] ApproveLeaveByManagerDto dto)
     {
-        // TODO: User to implement:
-        // - Check user is the employee's manager
-        // - Validate leave status is "Pending"
-        // - Call service based on IsApproved flag
-        // - Send notifications
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = dto.IsApproved
-            ? await _leaveService.ApproveByManagerAsync(id, dto.ManagerId, dto.Remarks)
-            : await _leaveService.RejectByManagerAsync(id, dto.ManagerId, dto.Remarks);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _leaveService.ApproveByManagerAsync(
+                id,
+                currentUserId.Value,
+                dto.Remarks ?? string.Empty);
 
         return Ok(_mapper.Map<LeaveRequestDto>(result));
     }
 
     /// <summary>
-    /// HR approves leave request (final approval).
-    /// TODO: Add HR authorization, balance deduction, notifications
+    /// Reject leave request by manager.
+    /// The approver ID is always taken from the authenticated JWT.
     /// </summary>
-    [HttpPost("{id:guid}/approve-hr")]
-    public async Task<ActionResult<LeaveRequestDto>> ApproveByHR(Guid id, [FromBody] ApproveLeaveByHRDto dto)
+    [Authorize(Roles = RoleConstants.ManagerHROrAdmin)]
+    [HttpPost("{id:guid}/reject-manager")]
+    public async Task<ActionResult<LeaveRequestDto>> RejectByManager(
+        Guid id,
+        [FromBody] ApproveLeaveByManagerDto dto)
     {
-        // TODO: User to implement:
-        // - Check user is HR
-        // - Validate leave status is "ApprovedByManager"
-        // - Call service based on IsApproved flag
-        // - Deduct from employee leave balance
-        // - Send final notifications
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = dto.IsApproved
-            ? await _leaveService.ApproveByHRAsync(id, dto.HRApproverId, dto.Remarks)
-            : await _leaveService.RejectByHRAsync(id, dto.HRApproverId, dto.Remarks);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _leaveService.RejectByManagerAsync(
+                id,
+                currentUserId.Value,
+                dto.Remarks ?? string.Empty);
 
         return Ok(_mapper.Map<LeaveRequestDto>(result));
     }
 
     /// <summary>
-    /// Employee cancels an approved leave.
-    /// TODO: Add authorization (must be own leave), restoration of balance
+    /// Approve leave request by HR.
+    /// The approver ID is always taken from the authenticated JWT.
+    /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
+    [HttpPost("{id:guid}/approve-hr")]
+    public async Task<ActionResult<LeaveRequestDto>> ApproveByHr(
+        Guid id,
+        [FromBody] ApproveLeaveByHRDto dto)
+    {
+        var currentUserId = TryGetCurrentUserId();
+
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _leaveService.ApproveByHRAsync(
+                id,
+                currentUserId.Value,
+                dto.Remarks ?? string.Empty);
+
+        return Ok(_mapper.Map<LeaveRequestDto>(result));
+    }
+
+    /// <summary>
+    /// Reject leave request by HR.
+    /// The approver ID is always taken from the authenticated JWT.
+    /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
+    [HttpPost("{id:guid}/reject-hr")]
+    public async Task<ActionResult<LeaveRequestDto>> RejectByHr(
+        Guid id,
+        [FromBody] ApproveLeaveByHRDto dto)
+    {
+        var currentUserId = TryGetCurrentUserId();
+
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _leaveService.RejectByHRAsync(
+                id,
+                currentUserId.Value,
+                dto.Remarks ?? string.Empty);
+
+        return Ok(_mapper.Map<LeaveRequestDto>(result));
+    }
+
+    /// <summary>
+    /// Cancel a leave request.
+    /// Employees can cancel only their own leave requests.
     /// </summary>
     [HttpPost("{id:guid}/cancel")]
-    public async Task<ActionResult<LeaveRequestDto>> CancelLeave(Guid id, [FromBody] CancelLeaveDto dto)
+    public async Task<ActionResult<LeaveRequestDto>> CancelLeaveRequest(
+        Guid id,
+        [FromBody] CancelLeaveDto dto)
     {
-        // TODO: User to implement:
-        // - Check user owns the leave
-        // - Validate leave status is "ApprovedByHR"
-        // - Check start date is future
-        // - Call service
-        // - Restore leave balance
-        // - Notify manager/HR
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = await _leaveService.CancelLeaveAsync(id, dto.CancellationReason);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var leaveRequest =
+            await _leaveService.GetLeaveRequestByIdAsync(id);
+
+        if (leaveRequest == null)
+        {
+            return NotFound();
+        }
+
+        var canCancel =
+            leaveRequest.EmployeeId == currentUserId.Value ||
+            _currentUserService.IsInRole(RoleConstants.HR) ||
+            _currentUserService.IsInRole(RoleConstants.Admin);
+
+        if (!canCancel)
+        {
+            return Forbid();
+        }
+
+        var result =
+            await _leaveService.CancelLeaveAsync(
+                id,
+                dto.CancellationReason);
+
         return Ok(_mapper.Map<LeaveRequestDto>(result));
     }
 
     /// <summary>
-    /// Get pending leave requests for manager.
-    /// TODO: Add pagination, filtering by urgency/department
+    /// Get leave requests pending for a manager.
+    /// A manager can access only their own pending requests.
+    /// HR and Admin can query any manager.
     /// </summary>
+    [Authorize(Roles = RoleConstants.ManagerHROrAdmin)]
     [HttpGet("pending-for-manager/{managerId:guid}")]
-    public async Task<ActionResult<List<LeaveRequestDto>>> GetPendingLeavesForManager(Guid managerId)
+    public async Task<ActionResult<IEnumerable<LeaveRequestDto>>>
+        GetPendingForManager(Guid managerId)
     {
-        // TODO: User to implement:
-        // - Check user is the manager
-        // - Add pagination
-        // - Add filtering options
-        // - Add caching
+        var currentUserId = TryGetCurrentUserId();
 
-        var results = await _leaveService.GetPendingLeavesForManagerAsync(managerId);
-        return Ok(_mapper.Map<List<LeaveRequestDto>>(results));
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var isPrivilegedUser =
+            _currentUserService.IsInRole(RoleConstants.HR) ||
+            _currentUserService.IsInRole(RoleConstants.Admin);
+
+        if (managerId != currentUserId.Value && !isPrivilegedUser)
+        {
+            return Forbid();
+        }
+
+        var result =
+            await _leaveService.GetPendingLeavesForManagerAsync(
+                managerId);
+
+        return Ok(_mapper.Map<List<LeaveRequestDto>>(result));
     }
 
     /// <summary>
-    /// Get pending leave requests for HR.
-    /// TODO: Add pagination, status filtering, dashboard metrics
+    /// Get leave requests pending HR approval.
+    /// Accessible only by HR and Admin.
     /// </summary>
+    [Authorize(Roles = RoleConstants.HROrAdmin)]
     [HttpGet("pending-for-hr")]
-    public async Task<ActionResult<List<LeaveRequestDto>>> GetPendingLeavesForHR()
+    public async Task<ActionResult<IEnumerable<LeaveRequestDto>>>
+        GetPendingForHr()
     {
-        // TODO: User to implement:
-        // - Check user is HR
-        // - Add pagination
-        // - Add filtering
-        // - Add dashboard summary (pending count, urgent, by department)
+        var result =
+            await _leaveService.GetPendingLeavesForHRAsync();
 
-        var results = await _leaveService.GetPendingLeavesForHRAsync();
-        return Ok(_mapper.Map<List<LeaveRequestDto>>(results));
+        return Ok(_mapper.Map<List<LeaveRequestDto>>(result));
     }
 }

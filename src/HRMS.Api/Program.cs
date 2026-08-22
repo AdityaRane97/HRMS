@@ -51,7 +51,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddValidatorsFromAssemblies(AppDomain.CurrentDomain.GetAssemblies());
 
 // Register ICurrentUser implementation in HRMS.Api (populated per request)
-builder.Services.AddHttpContextAccessor();
+
 builder.Services.AddScoped<HRMS.Application.Common.ICurrentUser, HRMS.Api.Identity.CurrentUser>();
 
 // Phase 2.1: Register Payroll, Attendance, Leave services (in-memory)
@@ -59,6 +59,9 @@ builder.Services.AddScoped<IPayrollService, InMemoryPayrollService>();
 builder.Services.AddScoped<IAttendanceService, InMemoryAttendanceService>();
 builder.Services.AddScoped<ILeaveService, InMemoryLeaveService>();
 builder.Services.AddScoped<IEmployeeService, InMemoryEmployeeService>();
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 // Phase 2.2: Register Authentication services (JWT + Refresh tokens)
 var jwtConfig = new JwtConfiguration();
 builder.Configuration.GetSection("Jwt").Bind(jwtConfig);

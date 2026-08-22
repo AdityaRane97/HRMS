@@ -1,15 +1,16 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
+using HRMS.Application.Constants;
 using HRMS.Application.DTOs;
 using HRMS.Application.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for attendance tracking and management.
-/// Phase 2.2: Protected with [Authorize]. Resource-based and role-based checks to be added in Phase 3.
-/// TODO: Add role-based authorization (employee own record, manager, HR), rate limiting, geofencing
+/// Phase 2.3: Self-service endpoints use the authenticated user's identity.
+/// Resource-based authorization for read endpoints will be added separately.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -18,131 +19,168 @@ namespace HRMS.Api.Controllers;
 public class AttendanceController : ControllerBase
 {
     private readonly IAttendanceService _attendanceService;
+    private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
     private readonly ILogger<AttendanceController> _logger;
 
-    public AttendanceController(IAttendanceService attendanceService, IMapper mapper, ILogger<AttendanceController> logger)
+    public AttendanceController(
+        IAttendanceService attendanceService,
+        ICurrentUserService currentUserService,
+        IMapper mapper,
+        ILogger<AttendanceController> logger)
     {
         _attendanceService = attendanceService;
+        _currentUserService = currentUserService;
         _mapper = mapper;
         _logger = logger;
     }
 
     /// <summary>
     /// Record employee check-in.
-    /// TODO: Add geofencing validation, biometric integration
+    /// The employee identity is taken from the authenticated JWT user.
     /// </summary>
     [HttpPost("check-in")]
-    public async Task<ActionResult<AttendanceLogDto>> CheckIn([FromBody] AttendanceCheckInDto dto)
+    public async Task<ActionResult<AttendanceLogDto>> CheckIn(
+        [FromBody] AttendanceCheckInDto dto)
     {
-        // TODO: User to implement:
-        // - Validate employee is active
-        // - Check no duplicate check-in today
-        // - Validate location if required
-        // - Call service
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = await _attendanceService.CheckInAsync(dto.EmployeeId, dto.CheckInTime, dto.Location);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result = await _attendanceService.CheckInAsync(
+            currentUserId.Value,
+            dto.CheckInTime,
+            dto.Location);
+
         return Ok(_mapper.Map<AttendanceLogDto>(result));
     }
 
     /// <summary>
     /// Record employee check-out.
-    /// TODO: Add minimum work duration validation
+    /// The employee identity is taken from the authenticated JWT user.
     /// </summary>
     [HttpPost("check-out")]
-    public async Task<ActionResult<AttendanceLogDto>> CheckOut([FromBody] AttendanceCheckOutDto dto)
+    public async Task<ActionResult<AttendanceLogDto>> CheckOut(
+        [FromBody] AttendanceCheckOutDto dto)
     {
-        // TODO: User to implement:
-        // - Find today's check-in
-        // - Validate check-out is after check-in
-        // - Call service
-        // - Calculate worked hours
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = await _attendanceService.CheckOutAsync(dto.EmployeeId, dto.CheckOutTime, dto.Remarks);
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result = await _attendanceService.CheckOutAsync(
+            currentUserId.Value,
+            dto.CheckOutTime,
+            dto.Remarks);
+
         return Ok(_mapper.Map<AttendanceLogDto>(result));
     }
 
     /// <summary>
-    /// Get attendance for specific date.
-    /// TODO: Add authorization checks
+    /// Get attendance for a specific date.
+    /// Resource-level authorization will be added in a later Batch.
     /// </summary>
     [HttpGet("{employeeId:guid}/{date:datetime}")]
-    public async Task<ActionResult<AttendanceLogDto>> GetAttendanceByDate(Guid employeeId, DateTime date)
+    public async Task<ActionResult<AttendanceLogDto>> GetAttendanceByDate(
+        Guid employeeId,
+        DateTime date)
     {
-        // TODO: User to implement:
-        // - Validate date format
-        // - Check authorization
-        // - Call service
+        var result = await _attendanceService.GetAttendanceByDateAsync(
+            employeeId,
+            date);
 
-        var result = await _attendanceService.GetAttendanceByDateAsync(employeeId, date);
         if (result == null)
+        {
             return NotFound();
+        }
 
         return Ok(_mapper.Map<AttendanceLogDto>(result));
     }
 
     /// <summary>
-    /// Get attendance records for date range.
-    /// TODO: Add pagination, sorting, filtering
+    /// Get attendance records for a date range.
+    /// Resource-level authorization will be added in a later Batch.
     /// </summary>
     [HttpGet("{employeeId:guid}/range")]
-    public async Task<ActionResult<List<AttendanceLogDto>>> GetAttendanceByRange(Guid employeeId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<AttendanceLogDto>>>
+        GetAttendanceByRange(
+            Guid employeeId,
+            [FromQuery] DateTime startDate,
+            [FromQuery] DateTime endDate)
     {
-        // TODO: User to implement:
-        // - Validate date range
-        // - Add pagination
-        // - Check authorization
-        // - Add caching
+        var results =
+            await _attendanceService.GetAttendanceByRangeAsync(
+                employeeId,
+                startDate,
+                endDate);
 
-        var results = await _attendanceService.GetAttendanceByRangeAsync(employeeId, startDate, endDate);
         return Ok(_mapper.Map<List<AttendanceLogDto>>(results));
     }
 
     /// <summary>
-    /// Approve or adjust attendance (HR/Manager only).
-    /// TODO: Add role-based authorization, audit logging
+    /// Approve or adjust attendance.
+    /// Accessible by Manager, HR, and Admin.
+    /// The approver identity is taken from the authenticated JWT user.
     /// </summary>
+    [Authorize(Roles = RoleConstants.ManagerHROrAdmin)]
     [HttpPost("approve")]
-    public async Task<ActionResult<AttendanceLogDto>> ApproveAttendance([FromBody] AttendanceApprovalDto dto)
+    public async Task<ActionResult<AttendanceLogDto>> ApproveAttendance(
+        [FromBody] AttendanceApprovalDto dto)
     {
-        // TODO: User to implement:
-        // - Check authorization (HR or manager)
-        // - Validate status
-        // - Call service
-        // - Log approval event
+        var currentUserId = TryGetCurrentUserId();
 
-        var result = await _attendanceService.ApproveAttendanceAsync(
-            dto.EmployeeId,
-            dto.AttendanceDate,
-            dto.AttendanceStatus,
-            Guid.NewGuid(), // TODO: Get from current user
-            dto.ApprovalRemarks
-        );
+        if (currentUserId is null)
+        {
+            return Unauthorized(new
+            {
+                message = "Invalid authenticated user."
+            });
+        }
+
+        var result =
+            await _attendanceService.ApproveAttendanceAsync(
+                dto.EmployeeId,
+                dto.AttendanceDate,
+                dto.AttendanceStatus,
+                currentUserId.Value,
+                dto.ApprovalRemarks);
 
         return Ok(_mapper.Map<AttendanceLogDto>(result));
     }
 
     /// <summary>
-    /// Get attendance summary (statistics) for period.
-    /// TODO: Add caching, export options (PDF, Excel)
+    /// Get attendance summary for a period.
+    /// Resource-level authorization will be added in a later Batch.
     /// </summary>
     [HttpGet("{employeeId:guid}/summary")]
-    public async Task<IActionResult> GetAttendanceSummary(Guid employeeId, [FromQuery] DateTime startDate, [FromQuery] DateTime endDate)
+    public async Task<IActionResult> GetAttendanceSummary(
+        Guid employeeId,
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
     {
-        // TODO: User to implement:
-        // - Validate date range
-        // - Check authorization
-        // - Call service
-        // - Add formatting/export options
-
         var summary = new
         {
             employeeId,
             startDate,
-            endDate,
-            // TODO: Call service and return summary object
+            endDate
         };
 
         return Ok(summary);
+    }
+
+    private Guid? TryGetCurrentUserId()
+    {
+        return _currentUserService.UserId;
     }
 }
