@@ -9,8 +9,9 @@ namespace HRMS.Api.Controllers;
 
 /// <summary>
 /// API endpoints for attendance tracking and management.
-/// Phase 2.3: Self-service endpoints use the authenticated user's identity.
-/// Resource-based authorization for read endpoints will be added separately.
+/// Phase 2.3: Role-Based Access Control + Resource-Level Authorization.
+/// Self-service endpoints enforce employee identity from JWT, not from request body.
+/// Read endpoints validate ownership: own record OR Manager/HR/Admin.
 /// </summary>
 [Authorize]
 [ApiController]
@@ -36,8 +37,33 @@ public class AttendanceController : ControllerBase
     }
 
     /// <summary>
+    /// Helper: Get current authenticated user ID or return 401.
+    /// </summary>
+    private Guid? TryGetCurrentUserId()
+    {
+        return _currentUserService.UserId;
+    }
+
+    /// <summary>
+    /// Helper: Check if current user can access another employee's attendance record.
+    /// Allowed if: own record OR Manager/HR/Admin.
+    /// </summary>
+    private bool CanAccessEmployeeRecord(Guid targetEmployeeId)
+    {
+        if (_currentUserService.UserId == targetEmployeeId)
+            return true; // Own record
+
+        if (_currentUserService.IsInRole(RoleConstants.Manager) ||
+            _currentUserService.IsInRole(RoleConstants.HR) ||
+            _currentUserService.IsInRole(RoleConstants.Admin))
+            return true; // Manager/HR/Admin can access all
+
+        return false; // Unauthorized
+    }
+
+    /// <summary>
     /// Record employee check-in.
-    /// The employee identity is taken from the authenticated JWT user.
+    /// Self-service: Employee can only check in for themselves (uses JWT identity, not DTO).
     /// </summary>
     [HttpPost("check-in")]
     public async Task<ActionResult<AttendanceLogDto>> CheckIn(
@@ -53,8 +79,10 @@ public class AttendanceController : ControllerBase
             });
         }
 
+        _logger.LogInformation($"Employee {currentUserId} checking in at {dto.CheckInTime}");
+
         var result = await _attendanceService.CheckInAsync(
-            currentUserId.Value,
+            currentUserId.Value, // Use JWT identity, ignore DTO
             dto.CheckInTime,
             dto.Location);
 
@@ -63,7 +91,7 @@ public class AttendanceController : ControllerBase
 
     /// <summary>
     /// Record employee check-out.
-    /// The employee identity is taken from the authenticated JWT user.
+    /// Self-service: Employee can only check out for themselves (uses JWT identity, not DTO).
     /// </summary>
     [HttpPost("check-out")]
     public async Task<ActionResult<AttendanceLogDto>> CheckOut(
@@ -79,8 +107,10 @@ public class AttendanceController : ControllerBase
             });
         }
 
+        _logger.LogInformation($"Employee {currentUserId} checking out at {dto.CheckOutTime}");
+
         var result = await _attendanceService.CheckOutAsync(
-            currentUserId.Value,
+            currentUserId.Value, // Use JWT identity, ignore DTO
             dto.CheckOutTime,
             dto.Remarks);
 
@@ -88,14 +118,21 @@ public class AttendanceController : ControllerBase
     }
 
     /// <summary>
-    /// Get attendance for a specific date.
-    /// Resource-level authorization will be added in a later Batch.
+    /// Get attendance for a specific employee and date.
+    /// Resource-level authorization: own record OR Manager/HR/Admin.
     /// </summary>
     [HttpGet("{employeeId:guid}/{date:datetime}")]
     public async Task<ActionResult<AttendanceLogDto>> GetAttendanceByDate(
         Guid employeeId,
         DateTime date)
     {
+        // Phase 2.3: Resource-level authorization check
+        if (!CanAccessEmployeeRecord(employeeId))
+        {
+            _logger.LogWarning($"User {_currentUserService.UserId} attempted unauthorized access to employee {employeeId} attendance.");
+            return Forbid();
+        }
+
         var result = await _attendanceService.GetAttendanceByDateAsync(
             employeeId,
             date);
@@ -110,28 +147,40 @@ public class AttendanceController : ControllerBase
 
     /// <summary>
     /// Get attendance records for a date range.
-    /// Resource-level authorization will be added in a later Batch.
+    /// Resource-level authorization: own records OR Manager/HR/Admin.
     /// </summary>
     [HttpGet("{employeeId:guid}/range")]
-    public async Task<ActionResult<List<AttendanceLogDto>>>
-        GetAttendanceByRange(
-            Guid employeeId,
-            [FromQuery] DateTime startDate,
-            [FromQuery] DateTime endDate)
+    public async Task<ActionResult<List<AttendanceLogDto>>> GetAttendanceByRange(
+        Guid employeeId,
+        [FromQuery] DateTime startDate,
+        [FromQuery] DateTime endDate)
     {
-        var results =
-            await _attendanceService.GetAttendanceByRangeAsync(
-                employeeId,
-                startDate,
-                endDate);
+        // Phase 2.3: Resource-level authorization check
+        if (!CanAccessEmployeeRecord(employeeId))
+        {
+            _logger.LogWarning($"User {_currentUserService.UserId} attempted unauthorized access to employee {employeeId} attendance range.");
+            return Forbid();
+        }
+
+        if (startDate > endDate)
+        {
+            return BadRequest(new
+            {
+                message = "Start date cannot be greater than end date."
+            });
+        }
+
+        var results = await _attendanceService.GetAttendanceByRangeAsync(
+            employeeId,
+            startDate,
+            endDate);
 
         return Ok(_mapper.Map<List<AttendanceLogDto>>(results));
     }
 
     /// <summary>
     /// Approve or adjust attendance.
-    /// Accessible by Manager, HR, and Admin.
-    /// The approver identity is taken from the authenticated JWT user.
+    /// Manager, HR, Admin only. Approver identity from JWT (not DTO).
     /// </summary>
     [Authorize(Roles = RoleConstants.ManagerHROrAdmin)]
     [HttpPost("approve")]
@@ -148,20 +197,21 @@ public class AttendanceController : ControllerBase
             });
         }
 
-        var result =
-            await _attendanceService.ApproveAttendanceAsync(
-                dto.EmployeeId,
-                dto.AttendanceDate,
-                dto.AttendanceStatus,
-                currentUserId.Value,
-                dto.ApprovalRemarks);
+        _logger.LogInformation($"User {currentUserId} approving attendance for employee {dto.EmployeeId}");
+
+        var result = await _attendanceService.ApproveAttendanceAsync(
+            dto.EmployeeId,
+            dto.AttendanceDate,
+            dto.AttendanceStatus,
+            currentUserId.Value, // Use JWT identity, ignore DTO
+            dto.ApprovalRemarks);
 
         return Ok(_mapper.Map<AttendanceLogDto>(result));
     }
 
     /// <summary>
     /// Get attendance summary for a period.
-    /// Resource-level authorization will be added in a later Batch.
+    /// Resource-level authorization: own summary OR Manager/HR/Admin.
     /// </summary>
     [HttpGet("{employeeId:guid}/summary")]
     public async Task<IActionResult> GetAttendanceSummary(
@@ -169,18 +219,37 @@ public class AttendanceController : ControllerBase
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate)
     {
-        var summary = new
+        // Phase 2.3: Resource-level authorization check
+        if (!CanAccessEmployeeRecord(employeeId))
         {
+            _logger.LogWarning($"User {_currentUserService.UserId} attempted unauthorized access to employee {employeeId} summary.");
+            return Forbid();
+        }
+
+        if (startDate > endDate)
+        {
+            return BadRequest(new
+            {
+                message = "Start date cannot be greater than end date."
+            });
+        }
+
+        var attendanceRecords = await _attendanceService.GetAttendanceByRangeAsync(
             employeeId,
             startDate,
-            endDate
+            endDate);
+
+        var summary = new
+        {
+            EmployeeId = employeeId,
+            StartDate = startDate,
+            EndDate = endDate,
+            TotalRecords = attendanceRecords.Count,
+            PresentCount = attendanceRecords.Count(a => a.AttendanceStatus == "Present"),
+            ApprovedLeaveCount = attendanceRecords.Count(a => a.AttendanceStatus == "LeaveApproved"),
+            AbsentCount = attendanceRecords.Count(a => a.AttendanceStatus == "Absent")
         };
 
         return Ok(summary);
-    }
-
-    private Guid? TryGetCurrentUserId()
-    {
-        return _currentUserService.UserId;
     }
 }

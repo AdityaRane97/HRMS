@@ -86,13 +86,15 @@ public class InMemoryEmployeeService : IEmployeeService
     /// </summary>
     private void InitializeDemoEmployees()
     {
-        // Only add demo data if store is empty
+        // Only add demo data if store is already initialized
         if (EmployeeStore.Count > 0)
             return;
 
         var orgId = Guid.NewGuid();
 
-        // Demo HR employee
+        // ============================================================
+        // HR EMPLOYEE
+        // ============================================================
         var hrEmployee = new Employee(
             "John",
             "HR Admin",
@@ -103,11 +105,32 @@ public class InMemoryEmployeeService : IEmployeeService
         {
             Id = Guid.Parse("10000000-0000-0000-0000-000000000001"),
             Username = "john.hr",
-            PasswordHash = "demo_password_123", // Phase 2.2: Plain text demo; Phase 3: use BCrypt
-            EmploymentStatus = "Active"
+            PasswordHash = "demo_password_123",
+            EmploymentStatus = "Active",
+            Role = "HR"
         };
 
-        // Demo employee
+        // ============================================================
+        // MANAGER
+        // ============================================================
+        var managerEmployee = new Employee(
+            "Mike",
+            "Manager",
+            "mike.manager@company.com",
+            "MGR001",
+            DateTime.Now.AddYears(-4),
+            orgId)
+        {
+            Id = Guid.Parse("30000000-0000-0000-0000-000000000001"),
+            Username = "mike.manager",
+            PasswordHash = "demo_password_789",
+            EmploymentStatus = "Active",
+            Role = "Manager"
+        };
+
+        // ============================================================
+        // REGULAR EMPLOYEE
+        // ============================================================
         var regularEmployee = new Employee(
             "Jane",
             "Developer",
@@ -118,11 +141,38 @@ public class InMemoryEmployeeService : IEmployeeService
         {
             Id = Guid.Parse("20000000-0000-0000-0000-000000000001"),
             Username = "jane.dev",
-            PasswordHash = "demo_password_456", // Phase 2.2: Plain text demo; Phase 3: use BCrypt
-            EmploymentStatus = "Active"
+            PasswordHash = "demo_password_456",
+            EmploymentStatus = "Active",
+            Role = "Employee",
+
+            // Jane reports to Mike
+            ManagerId = managerEmployee.Id
         };
 
+        // ============================================================
+        // ADMIN
+        // ============================================================
+        var adminEmployee = new Employee(
+            "Admin",
+            "User",
+            "admin@company.com",
+            "ADM001",
+            DateTime.Now.AddYears(-6),
+            orgId)
+        {
+            Id = Guid.Parse("40000000-0000-0000-0000-000000000001"),
+            Username = "admin",
+            PasswordHash = "demo_password_000",
+            EmploymentStatus = "Active",
+            Role = "Admin"
+        };
+
+        // ============================================================
+        // ADD ALL DEMO EMPLOYEES TO STORE
+        // ============================================================
         EmployeeStore[hrEmployee.Id] = hrEmployee;
+        EmployeeStore[managerEmployee.Id] = managerEmployee;
         EmployeeStore[regularEmployee.Id] = regularEmployee;
+        EmployeeStore[adminEmployee.Id] = adminEmployee;
     }
 }

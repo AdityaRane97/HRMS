@@ -245,7 +245,7 @@ public class InMemoryAuthService : IAuthService
     /// 
     private static string GetEmployeeRole(Employee employee)
     {
-        if (string.IsNullOrEmpty(employee.Role))
+        if (string.IsNullOrWhiteSpace(employee.Role))
         {
             return "Employee";
         }

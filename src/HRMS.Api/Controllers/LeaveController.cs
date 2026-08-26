@@ -54,8 +54,8 @@ public class LeaveController : ControllerBase
             {
                 message = "Invalid authenticated user."
             });
-        }
-
+        }        
+                
         var result = await _leaveService.SubmitLeaveRequestAsync(
             currentUserId.Value,
             dto.LeaveType,
