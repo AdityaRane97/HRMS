@@ -1,0 +1,477 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center h-screen">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="!loading && profile" class="max-w-6xl mx-auto space-y-6">
+    <!-- Message Alert -->
+    <div
+      *ngIf="message"
+      class="rounded-lg p-4"
+      [ngClass]="
+        message.includes('successfully')
+          ? 'bg-green-50 border border-green-200'
+          : 'bg-blue-50 border border-blue-200'
+      "
+    >
+      <p
+        [ngClass]="
+          message.includes('successfully')
+            ? 'text-green-700'
+            : 'text-blue-700'
+        "
+      >
+        {{ message }}
+      </p>
+    </div>
+
+    <!-- ============================================================
+         SECTION 1: PROFILE HEADER
+         ============================================================ -->
+    <div class="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-lg p-8 shadow-lg">
+      <div class="flex items-start gap-6">
+        <!-- Back Button -->
+        <button
+          class="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+          aria-label="Go back"
+          (click)="goBack()"
+        >
+          <svg
+            class="w-6 h-6"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+
+        <!-- Avatar -->
+        <div
+          *ngIf="!profile.profilePhotoUrl"
+          class="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-2xl font-bold text-white flex-shrink-0"
+        >
+          {{ getInitials() }}
+        </div>
+        <img
+          *ngIf="profile.profilePhotoUrl"
+          [src]="profile.profilePhotoUrl"
+          alt="Profile Photo"
+          class="w-20 h-20 rounded-full object-cover flex-shrink-0 border-4 border-white"
+        />
+
+        <!-- Employee Info -->
+        <div class="flex-1">
+          <h1 class="text-3xl font-bold mb-2">{{ getFullName() }}</h1>
+          <div class="space-y-1 text-gray-300">
+            <p class="text-lg">{{ profile.designation || '-' }}</p>
+            <p class="text-sm">{{ profile.department || '-' }}</p>
+            <p class="text-sm">Employee Code: {{ profile.employeeCode }}</p>
+            <div class="pt-2 flex gap-4">
+              <span
+                class="inline-block px-3 py-1 bg-green-600 text-white text-xs font-semibold rounded-full"
+              >
+                {{ profile.employmentStatus }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit Button -->
+        <button
+          (click)="toggleEdit()"
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium flex items-center gap-2"
+        >
+          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          {{ editing ? 'Cancel' : 'Edit' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Edit Form (when in edit mode) -->
+    <form
+      *ngIf="editing"
+      [formGroup]="profileForm"
+      (ngSubmit)="onSave()"
+      class="bg-white rounded-lg shadow p-6 border border-gray-200"
+    >
+      <h2 class="text-xl font-bold text-gray-900 mb-6">Edit Profile</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+          <input
+            type="text"
+            formControlName="firstName"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="First Name"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+          <input
+            type="text"
+            formControlName="lastName"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Last Name"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input
+            type="email"
+            formControlName="email"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed focus:outline-none"
+            [disabled]="true"
+          />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+          <input
+            type="tel"
+            formControlName="phoneNumber"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Phone Number"
+          />
+        </div>
+      </div>
+
+      <div class="mt-6 flex gap-4">
+        <button
+          type="submit"
+          [disabled]="saving"
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg disabled:opacity-50 transition-colors font-medium"
+        >
+          {{ saving ? 'Saving...' : 'Save Changes' }}
+        </button>
+        <button
+          type="button"
+          (click)="toggleEdit()"
+          class="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-900 rounded-lg transition-colors font-medium"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+
+    <!-- ============================================================
+         SECTION 2: PERSONAL INFORMATION
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-gray-900">Personal Information</h2>
+      </div>
+
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <app-profile-info-field label="First Name" [value]="profile.firstName"></app-profile-info-field>
+          <app-profile-info-field label="Last Name" [value]="profile.lastName"></app-profile-info-field>
+          <app-profile-info-field label="Email" [value]="profile.email"></app-profile-info-field>
+          <app-profile-info-field
+            label="Phone Number"
+            [value]="profile.phoneNumber"
+            [maskable]="true"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Employee Code"
+            [value]="profile.employeeCode"
+          ></app-profile-info-field>
+          <app-profile-info-field label="Designation" [value]="profile.designation"></app-profile-info-field>
+          <app-profile-info-field label="Department" [value]="profile.department"></app-profile-info-field>
+          <app-profile-info-field
+            label="Join Date"
+            [value]="formatDate(profile.joinDate)"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Employment Type"
+            [value]="profile.employmentType"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Employment Status"
+            [value]="profile.employmentStatus"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Alternate Phone"
+            [value]="profile.alternatePhoneNumber"
+            [maskable]="true"
+          ></app-profile-info-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 3: DEMOGRAPHIC INFORMATION
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-bold text-gray-900">Demographic Information</h2>
+      </div>
+
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <app-profile-info-field
+            label="Date of Birth"
+            [value]="formatDate(profile.demographic?.dateOfBirth)"
+          ></app-profile-info-field>
+          <app-profile-info-field label="Gender" [value]="profile.demographic?.gender"></app-profile-info-field>
+          <app-profile-info-field
+            label="Marital Status"
+            [value]="profile.demographic?.maritalStatus"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Highest Education"
+            [value]="profile.demographic?.highestEducation"
+          ></app-profile-info-field>
+          <app-profile-info-field label="Religion" [value]="profile.demographic?.religion"></app-profile-info-field>
+          <app-profile-info-field
+            label="Blood Group"
+            [value]="profile.demographic?.bloodGroup"
+          ></app-profile-info-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 4: NATIONAL IDENTIFIERS
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-bold text-gray-900">National Identifiers</h2>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="!profile.nationalIdentifiers || profile.nationalIdentifiers.length === 0" class="text-gray-500 text-center py-8">
+          No national identifiers on file
+        </div>
+
+        <div *ngIf="profile.nationalIdentifiers && profile.nationalIdentifiers.length > 0" class="space-y-6">
+          <div
+            *ngFor="let identifier of profile.nationalIdentifiers; let i = index"
+            class="border border-gray-200 rounded-lg p-6 bg-gray-50"
+          >
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="font-semibold text-gray-900">{{ identifier.country }}</h3>
+                <p class="text-sm text-gray-500">{{ identifier.idType }}</p>
+                <span *ngIf="identifier.isPrimary" class="inline-block mt-2 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded">
+                  Primary
+                </span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">ID Number</label>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm text-gray-900 font-medium" *ngIf="!isNationalIdVisible(identifier.idNumber)">
+                    {{ getMaskedIdNumber(identifier.idNumber) }}
+                  </p>
+                  <p class="text-sm text-gray-900 font-medium" *ngIf="isNationalIdVisible(identifier.idNumber)">
+                    {{ identifier.idNumber }}
+                  </p>
+                  <button
+                    (click)="toggleNationalIdVisibility(identifier.idNumber)"
+                    class="text-gray-400 hover:text-gray-600 transition-colors"
+                    [attr.aria-label]="isNationalIdVisible(identifier.idNumber) ? 'Hide ID' : 'Show ID'"
+                    type="button"
+                  >
+                    <svg
+                      class="w-4 h-4"
+                      [ngClass]="isNationalIdVisible(identifier.idNumber) ? 'text-blue-600' : 'text-gray-400'"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        *ngIf="isNationalIdVisible(identifier.idNumber)"
+                        d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
+                      ></path>
+                      <circle *ngIf="isNationalIdVisible(identifier.idNumber)" cx="12" cy="12" r="3"></circle>
+                      <path
+                        *ngIf="!isNationalIdVisible(identifier.idNumber)"
+                        d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"
+                      ></path>
+                      <line *ngIf="!isNationalIdVisible(identifier.idNumber)" x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-1" *ngIf="identifier.issueDate">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Issue Date</label>
+                <p class="text-sm text-gray-900 font-medium">{{ formatDate(identifier.issueDate) }}</p>
+              </div>
+
+              <div class="space-y-1" *ngIf="identifier.expiryDate">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Expiry Date</label>
+                <p class="text-sm text-gray-900 font-medium">{{ formatDate(identifier.expiryDate) }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add More Identifiers Button -->
+        <button
+          type="button"
+          class="mt-6 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+          disabled
+          title="Add identifier feature coming soon"
+        >
+          + Add More Identifiers
+        </button>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 5: CONTACT INFORMATION
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-bold text-gray-900">Contact Information</h2>
+      </div>
+
+      <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          <app-profile-info-field
+            label="Personal Email"
+            [value]="profile.personalEmail"
+          ></app-profile-info-field>
+          <app-profile-info-field label="Work Email" [value]="profile.workEmail"></app-profile-info-field>
+          <app-profile-info-field
+            label="Phone Number"
+            [value]="profile.phoneNumber"
+            [maskable]="true"
+          ></app-profile-info-field>
+          <app-profile-info-field
+            label="Alternate Phone"
+            [value]="profile.alternatePhoneNumber"
+            [maskable]="true"
+          ></app-profile-info-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 6: ADDRESS INFORMATION
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-bold text-gray-900">Address Information</h2>
+      </div>
+
+      <div class="p-6">
+        <div class="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <!-- Full-width address field -->
+          <div class="col-span-full">
+            <app-profile-info-field label="Address" [value]="profile.address"></app-profile-info-field>
+          </div>
+
+          <!-- Remaining fields in grid -->
+          <app-profile-info-field label="City" [value]="profile.city"></app-profile-info-field>
+          <app-profile-info-field label="State" [value]="profile.state"></app-profile-info-field>
+          <app-profile-info-field label="Country" [value]="profile.country"></app-profile-info-field>
+          <app-profile-info-field label="Postal Code" [value]="profile.postalCode"></app-profile-info-field>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================================
+         SECTION 7: FAMILY AND EMERGENCY CONTACTS
+         ============================================================ -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-gray-900">Family and Emergency Contacts</h2>
+        <button
+          (click)="addFamilyContact()"
+          class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium text-sm flex items-center gap-1"
+        >
+          <span>+</span>
+          <span>Add Contact</span>
+        </button>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="!profile.familyContacts || profile.familyContacts.length === 0" class="text-gray-500 text-center py-8">
+          No family or emergency contacts on file
+        </div>
+
+        <div
+          *ngIf="profile.familyContacts && profile.familyContacts.length > 0"
+          class="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          <div
+            *ngFor="let contact of profile.familyContacts; let i = index"
+            class="border border-gray-200 rounded-lg p-6 bg-gray-50"
+          >
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <h3 class="font-semibold text-gray-900 text-lg">{{ contact.name }}</h3>
+                <p class="text-sm text-gray-600">{{ contact.relationship }}</p>
+                <span
+                  *ngIf="contact.isEmergencyContact"
+                  class="inline-block mt-2 px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded"
+                >
+                  Emergency Contact
+                </span>
+              </div>
+
+              <div class="flex gap-2">
+                <button
+                  (click)="editFamilyContact(contact.id)"
+                  class="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  [attr.aria-label]="'Edit ' + contact.name"
+                  title="Edit feature coming soon"
+                  disabled
+                >
+                  <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  (click)="deleteFamilyContact(contact.id)"
+                  class="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  [attr.aria-label]="'Delete ' + contact.name"
+                  title="Delete this contact"
+                >
+                  <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="space-y-3 text-sm">
+              <div *ngIf="contact.phoneNumber" class="flex items-center gap-2 text-gray-700">
+                <span class="font-medium text-gray-600">Phone:</span>
+                <span>{{ contact.phoneNumber }}</span>
+              </div>
+
+              <div *ngIf="contact.email" class="flex items-center gap-2 text-gray-700">
+                <span class="font-medium text-gray-600">Email:</span>
+                <span>{{ contact.email }}</span>
+              </div>
+
+              <div *ngIf="contact.dateOfBirth" class="flex items-center gap-2 text-gray-700">
+                <span class="font-medium text-gray-600">Date of Birth:</span>
+                <span>{{ formatDate(contact.dateOfBirth) }}</span>
+              </div>
+
+              <div *ngIf="contact.address" class="flex items-center gap-2 text-gray-700">
+                <span class="font-medium text-gray-600">Address:</span>
+                <span class="break-words">{{ contact.address }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

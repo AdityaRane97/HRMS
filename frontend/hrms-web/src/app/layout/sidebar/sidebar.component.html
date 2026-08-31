@@ -1,0 +1,17 @@
+<aside
+  [class.w-64]="isOpen"
+  [class.w-0]="!isOpen"
+  class="bg-white border-r border-gray-200 transition-all duration-300 overflow-hidden"
+>
+  <nav class="py-6 px-4 space-y-2">
+    <a
+      *ngFor="let item of menuItems"
+      [routerLink]="item.route"
+      routerLinkActive="bg-primary-100 text-primary-600"
+      class="flex items-center gap-3 px-4 py-3 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+    >
+      <span class="text-xl">{{ item.icon }}</span>
+      <span *ngIf="isOpen" class="text-sm font-medium">{{ item.label }}</span>
+    </a>
+  </nav>
+</aside>

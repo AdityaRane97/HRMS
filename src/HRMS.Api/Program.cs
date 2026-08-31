@@ -105,7 +105,19 @@ builder.Services
             }
         };
     });
-
+// Add CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend",
+        builder =>
+        {
+            builder
+                .WithOrigins("http://localhost:4200")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
+});
 var app = builder.Build();
 
 // Use error handling middleware before other middleware
@@ -127,5 +139,5 @@ app.MapControllers();
 
 app.MapHealthChecks("/health");
 
+app.UseCors("AllowFrontend");
 app.Run();
-

@@ -1,0 +1,53 @@
+<header class="bg-white shadow-sm border-b border-gray-200">
+  <div class="px-6 py-4 flex items-center justify-between">
+    <!-- Left: Logo and Sidebar Toggle -->
+    <div class="flex items-center gap-4">
+      <button
+        (click)="onToggleSidebar()"
+        class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        title="Toggle Sidebar"
+      >
+        <!-- TODO: Add hamburger icon -->
+        <span class="text-2xl">☰</span>
+      </button>
+      <h1 class="text-2xl font-bold text-primary-600">HRMS</h1>
+    </div>
+
+    <!-- Right: Search, Notifications, User Menu -->
+    <div class="flex items-center gap-6">
+      <!-- TODO: Add search bar -->
+
+      <!-- TODO: Add notifications -->
+
+      <!-- User Menu -->
+      <div class="relative">
+        <button
+          (click)="toggleUserMenu()"
+          class="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+        >
+          <!-- TODO: Add user avatar -->
+          <span class="w-8 h-8 bg-primary-500 text-white rounded-full flex items-center justify-center">
+            {{ currentUser?.firstName?.charAt(0) || 'U' }}
+          </span>
+          <span class="text-sm font-medium">
+            {{ currentUser?.firstName }} {{ currentUser?.lastName }}
+          </span>
+        </button>
+
+        <!-- User Dropdown Menu -->
+        <div
+          *ngIf="showUserMenu"
+          class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-10"
+        >
+          <!-- TODO: Add menu items for profile, settings -->
+          <button
+            (click)="onLogout()"
+            class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-b-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>

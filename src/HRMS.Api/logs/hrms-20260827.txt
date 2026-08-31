@@ -1,0 +1,46 @@
+2026-08-27 22:11:51.392 +05:30 [INF] User profile is available. Using 'C:\Users\Aditya Rane\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-08-27 22:11:51.930 +05:30 [INF] Now listening on: https://localhost:59069
+2026-08-27 22:11:51.933 +05:30 [INF] Now listening on: http://localhost:59070
+2026-08-27 22:11:52.021 +05:30 [INF] Application started. Press Ctrl+C to shut down.
+2026-08-27 22:11:52.023 +05:30 [INF] Hosting environment: Development
+2026-08-27 22:11:52.025 +05:30 [INF] Content root path: C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api
+2026-08-27 22:11:55.739 +05:30 [INF] Request starting HTTP/2 GET https://localhost:59069/ - null null
+2026-08-27 22:18:38.569 +05:30 [ERR] Unhandled exception. CorrelationId: 0HNO4B8CGH2BE:00000001
+System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+   at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
+   at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api\Program.cs:line 81
+   at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+   at Microsoft.Extensions.Options.OptionsMonitor`1.Get(String name)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationServiceImpl.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at HRMS.Api.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api\Middleware\ErrorHandlingMiddleware.cs:line 30
+2026-08-27 22:18:38.657 +05:30 [INF] Request finished HTTP/2 GET https://localhost:59069/ - 500 null application/json; charset=utf-8 402930.9354ms
+2026-08-27 22:18:38.708 +05:30 [INF] Request starting HTTP/2 GET https://localhost:59069/favicon.ico - null null
+2026-08-27 22:18:38.742 +05:30 [ERR] Unhandled exception. CorrelationId: 0HNO4B8CGH2BE:00000003
+System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tokens.SymmetricSecurityKey', key length is zero.
+   at Microsoft.IdentityModel.Tokens.SymmetricSecurityKey..ctor(Byte[] key)
+   at Program.<>c__DisplayClass0_0.<<Main>$>b__3(JwtBearerOptions options) in C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api\Program.cs:line 81
+   at Microsoft.Extensions.Options.OptionsFactory`1.Create(String name)
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+--- End of stack trace from previous location ---
+   at System.Lazy`1.CreateValue()
+   at Microsoft.Extensions.Options.OptionsCache`1.GetOrAdd[TArg](String name, Func`3 createOptions, TArg factoryArgument)
+   at Microsoft.Extensions.Options.OptionsMonitor`1.Get(String name)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandler`1.InitializeAsync(AuthenticationScheme scheme, HttpContext context)
+   at Microsoft.AspNetCore.Authentication.AuthenticationHandlerProvider.GetHandlerAsync(HttpContext context, String authenticationScheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationService.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationServiceImpl.AuthenticateAsync(HttpContext context, String scheme)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Swashbuckle.AspNetCore.SwaggerUI.SwaggerUIMiddleware.Invoke(HttpContext httpContext)
+   at Swashbuckle.AspNetCore.Swagger.SwaggerMiddleware.Invoke(HttpContext httpContext, ISwaggerProvider swaggerProvider)
+   at HRMS.Api.Middleware.ErrorHandlingMiddleware.InvokeAsync(HttpContext context) in C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api\Middleware\ErrorHandlingMiddleware.cs:line 30
+2026-08-27 22:18:38.749 +05:30 [INF] Request finished HTTP/2 GET https://localhost:59069/favicon.ico - 500 null application/json; charset=utf-8 40.9314ms
