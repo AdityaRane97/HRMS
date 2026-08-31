@@ -1,0 +1,141 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-8">
+    <!-- Header -->
+    <div>
+      <button
+        class="mb-4 p-2 hover:bg-gray-200 rounded-lg transition-colors inline-flex"
+        aria-label="Go back"
+        (click)="goBack()"
+      >
+        <svg
+          class="w-6 h-6 text-gray-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <h1 class="text-4xl font-bold text-gray-900">Absence Balance</h1>
+      <p class="text-gray-600 mt-2">Review your current leave plan balances</p>
+    </div>
+
+    <!-- Balance As-of Date -->
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm text-gray-600 font-medium">Balance As-of Date</p>
+          <p class="text-lg font-bold text-gray-900 mt-1">{{ formatDate(balanceAsOfDate) }}</p>
+        </div>
+        <svg
+          class="w-12 h-12 text-blue-200"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+    </div>
+
+    <!-- Plan Balances Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div *ngFor="let plan of plans" class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+        <!-- Card Header -->
+        <div [ngClass]="'h-1 ' + getCardBorderColor(plan.color)"></div>
+
+        <!-- Card Content -->
+        <div class="p-6">
+          <!-- Plan Name -->
+          <h3 class="text-lg font-bold text-gray-900 mb-4">{{ plan.name }}</h3>
+
+          <!-- Balance Display -->
+          <div class="mb-6">
+            <div class="flex items-baseline gap-2 mb-2">
+              <span class="text-3xl font-bold" [ngClass]="'text-' + plan.color + '-600'">
+                {{ plan.balance }}
+              </span>
+              <span class="text-sm text-gray-600">{{ plan.unit }}</span>
+            </div>
+            <p class="text-xs text-gray-500" *ngIf="plan.total !== 999">
+              {{ plan.used }} / {{ plan.total }} used
+            </p>
+          </div>
+
+          <!-- Progress Bar -->
+          <div *ngIf="plan.total !== 999" class="mb-4">
+            <div class="bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                [ngClass]="getProgressBarColor(plan.color)"
+                class="h-full rounded-full transition-all duration-300"
+                [style.width.%]="getProgressPercentage(plan)"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Usage Details -->
+          <div *ngIf="plan.total !== 999" class="bg-gray-50 rounded-lg p-3">
+            <div class="flex justify-between text-xs text-gray-600">
+              <span>Used: {{ plan.used }} {{ plan.unit }}</span>
+              <span>Remaining: {{ plan.balance }} {{ plan.unit }}</span>
+            </div>
+          </div>
+
+          <!-- Unlimited Badge -->
+          <div *ngIf="plan.total === 999" class="bg-gray-100 border border-gray-300 rounded-lg p-3">
+            <p class="text-xs text-gray-600 text-center font-medium">Unlimited</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Total Leave Used -->
+      <div class="bg-white rounded-lg shadow border border-gray-200 p-6 border-l-4 border-l-orange-500">
+        <p class="text-sm text-gray-600 font-medium mb-2">Total Leave Used</p>
+        <p class="text-3xl font-bold text-orange-600">24.5 Days</p>
+        <p class="text-xs text-gray-500 mt-2">This calendar year</p>
+      </div>
+
+      <!-- Planned Absences -->
+      <div class="bg-white rounded-lg shadow border border-gray-200 p-6 border-l-4 border-l-blue-500">
+        <p class="text-sm text-gray-600 font-medium mb-2">Planned Absences</p>
+        <p class="text-3xl font-bold text-blue-600">8 Days</p>
+        <p class="text-xs text-gray-500 mt-2">Upcoming scheduled leaves</p>
+      </div>
+
+      <!-- Available Balance -->
+      <div class="bg-white rounded-lg shadow border border-gray-200 p-6 border-l-4 border-l-green-500">
+        <p class="text-sm text-gray-600 font-medium mb-2">Total Available</p>
+        <p class="text-3xl font-bold text-green-600">39.5 Days</p>
+        <p class="text-xs text-gray-500 mt-2">Across all plans</p>
+      </div>
+    </div>
+
+    <!-- Notes Section -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+      <h3 class="text-lg font-bold text-gray-900 mb-4">Important Notes</h3>
+      <ul class="space-y-2 text-sm text-gray-600">
+        <li class="flex gap-2">
+          <span class="text-blue-600">•</span>
+          <span>Balances are calculated based on leave policies applicable to your role and tenure.</span>
+        </li>
+        <li class="flex gap-2">
+          <span class="text-blue-600">•</span>
+          <span>Your leave year runs from January 1 to December 31.</span>
+        </li>
+        <li class="flex gap-2">
+          <span class="text-blue-600">•</span>
+          <span>Unused leave may be carried over up to a maximum as per your policy.</span>
+        </li>
+        <li class="flex gap-2">
+          <span class="text-blue-600">•</span>
+          <span>For any discrepancies, please contact the Human Resources department.</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>

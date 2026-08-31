@@ -178,3 +178,33 @@ System.ArgumentException: IDX10703: Cannot create a 'Microsoft.IdentityModel.Tok
 2026-08-31 16:26:26.252 +05:30 [INF] Executed action HRMS.Api.Controllers.AuthController.Login (HRMS.Api) in 6257.1914ms
 2026-08-31 16:26:26.255 +05:30 [INF] Executed endpoint 'HRMS.Api.Controllers.AuthController.Login (HRMS.Api)'
 2026-08-31 16:26:26.260 +05:30 [INF] Request finished HTTP/2 POST https://localhost:59069/api/auth/login - 200 null application/json; charset=utf-8 6295.424ms
+2026-08-31 19:17:39.044 +05:30 [INF] User profile is available. Using 'C:\Users\Aditya Rane\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-08-31 19:17:39.667 +05:30 [INF] Now listening on: https://localhost:59069
+2026-08-31 19:17:39.669 +05:30 [INF] Now listening on: http://localhost:59070
+2026-08-31 19:17:39.740 +05:30 [INF] Application started. Press Ctrl+C to shut down.
+2026-08-31 19:17:39.743 +05:30 [INF] Hosting environment: Development
+2026-08-31 19:17:39.745 +05:30 [INF] Content root path: C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api
+2026-08-31 19:17:41.053 +05:30 [INF] Request starting HTTP/2 GET https://localhost:59069/ - null null
+2026-08-31 19:17:41.304 +05:30 [INF] Request finished HTTP/2 GET https://localhost:59069/ - 404 null null 265.9657ms
+2026-08-31 19:17:41.315 +05:30 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:59069/, Response status code: 404
+2026-08-31 19:26:36.299 +05:30 [INF] User profile is available. Using 'C:\Users\Aditya Rane\AppData\Local\ASP.NET\DataProtection-Keys' as key repository and Windows DPAPI to encrypt keys at rest.
+2026-08-31 19:26:36.642 +05:30 [INF] Now listening on: https://localhost:59069
+2026-08-31 19:26:36.644 +05:30 [INF] Now listening on: http://localhost:59070
+2026-08-31 19:26:36.749 +05:30 [INF] Application started. Press Ctrl+C to shut down.
+2026-08-31 19:26:36.751 +05:30 [INF] Hosting environment: Development
+2026-08-31 19:26:36.753 +05:30 [INF] Content root path: C:\Users\Aditya Rane\source\repos\HRMS\src\HRMS.Api
+2026-08-31 19:26:37.265 +05:30 [INF] Request starting HTTP/2 GET https://localhost:59069/ - null null
+2026-08-31 19:26:37.513 +05:30 [INF] Request finished HTTP/2 GET https://localhost:59069/ - 404 null null 257.8299ms
+2026-08-31 19:26:37.525 +05:30 [INF] Request reached the end of the middleware pipeline without being handled by application code. Request path: GET https://localhost:59069/, Response status code: 404
+2026-08-31 19:28:21.461 +05:30 [INF] Request starting HTTP/2 OPTIONS https://localhost:59069/api/auth/login - null null
+2026-08-31 19:28:21.532 +05:30 [INF] CORS policy execution successful.
+2026-08-31 19:28:21.537 +05:30 [INF] Request finished HTTP/2 OPTIONS https://localhost:59069/api/auth/login - 204 null null 75.2359ms
+2026-08-31 19:28:21.542 +05:30 [INF] Request starting HTTP/2 POST https://localhost:59069/api/auth/login - application/json 213
+2026-08-31 19:28:21.553 +05:30 [INF] CORS policy execution successful.
+2026-08-31 19:28:21.556 +05:30 [INF] Executing endpoint 'HRMS.Api.Controllers.AuthController.Login (HRMS.Api)'
+2026-08-31 19:28:21.594 +05:30 [INF] Route matched with {action = "Login", controller = "Auth"}. Executing controller action with signature System.Threading.Tasks.Task`1[Microsoft.AspNetCore.Mvc.IActionResult] Login(HRMS.Application.DTOs.LoginRequestDto) on controller HRMS.Api.Controllers.AuthController (HRMS.Api).
+2026-08-31 19:28:28.524 +05:30 [INF] Successful login for employee: 40000000-0000-0000-0000-000000000001 from IP: ::1
+2026-08-31 19:28:28.532 +05:30 [INF] Executing OkObjectResult, writing value of type 'HRMS.Application.DTOs.TokenResponseDto'.
+2026-08-31 19:28:28.550 +05:30 [INF] Executed action HRMS.Api.Controllers.AuthController.Login (HRMS.Api) in 6948.4661ms
+2026-08-31 19:28:28.553 +05:30 [INF] Executed endpoint 'HRMS.Api.Controllers.AuthController.Login (HRMS.Api)'
+2026-08-31 19:28:28.555 +05:30 [INF] Request finished HTTP/2 POST https://localhost:59069/api/auth/login - 200 null application/json; charset=utf-8 7013.5871ms

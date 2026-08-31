@@ -1,0 +1,18 @@
+// Timesheet Component Styles
+
+// Smooth transitions for cards
+.dashboard-card {
+  transition: all 0.3s ease;
+}
+
+// Add any custom animations or styles here
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

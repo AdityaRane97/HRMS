@@ -1,0 +1,78 @@
+<div class="p-6 bg-gray-50 min-h-screen">
+  <!-- Header -->
+  <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow p-8 text-white mb-8">
+    <h1 class="text-4xl font-bold mb-2">Salary & Payroll</h1>
+    <p class="text-primary-100">Manage your salary information, declarations, and payslips</p>
+  </div>
+
+  <!-- Quick Access Grid -->
+  <div>
+    <h2 class="text-2xl font-semibold text-gray-900 mb-6">Access Your Salary Information</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <app-quick-access-card 
+        *ngFor="let item of salaryQuickAccess" 
+        [item]="item">
+      </app-quick-access-card>
+    </div>
+  </div>
+
+  <!-- Information Sections -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+    <!-- Salary Information -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-4">📋 Understanding Your Salary</h3>
+      <ul class="space-y-3">
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>Basic Salary:</strong> Fixed compensation component</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>HRA:</strong> House Rent Allowance</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>FBP:</strong> Flexible Benefit Program allowance</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>Deductions:</strong> PF, Tax, Professional tax</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Tax & Declarations -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h3 class="text-xl font-semibold text-gray-900 mb-4">📊 Tax & Declarations</h3>
+      <ul class="space-y-3">
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>IT Declaration:</strong> Income tax planning</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>FBP Declaration:</strong> Flexible benefits selection</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>80C Components:</strong> Life insurance, PPF, loans</span>
+        </li>
+        <li class="flex gap-3">
+          <span class="text-primary-600">✓</span>
+          <span class="text-gray-700"><strong>Medical Deductions:</strong> Health insurance premium</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Actions/Resources -->
+  <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-3">💡 Tax Planning Tips</h3>
+    <ul class="space-y-2 text-gray-700">
+      <li>• Update your tax declarations before the financial year ends</li>
+      <li>• Use FBP benefits to optimize your take-home salary</li>
+      <li>• Review your payslips monthly for accuracy</li>
+      <li>• Download YTD reports for personal financial planning</li>
+    </ul>
+  </div>
+</div>

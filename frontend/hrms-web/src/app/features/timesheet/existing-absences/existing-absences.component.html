@@ -1,0 +1,150 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div>
+        <button
+          class="mb-4 p-2 hover:bg-gray-200 rounded-lg transition-colors inline-flex"
+          aria-label="Go back"
+          (click)="goBack()"
+        >
+          <svg
+            class="w-6 h-6 text-gray-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 class="text-4xl font-bold text-gray-900">Existing Absences</h1>
+        <p class="text-gray-600 mt-2">View and manage your absence requests</p>
+      </div>
+      <button
+        class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+        (click)="addAbsence()"
+      >
+        + Add Absence
+      </button>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Search -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
+          <input
+            type="text"
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+            placeholder="Search by type or duration..."
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          />
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+          <select
+            [(ngModel)]="statusFilter"
+            (change)="onStatusFilterChange()"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <option>All</option>
+            <option>Awaiting Approval</option>
+            <option>Scheduled</option>
+            <option>Completed</option>
+            <option>Withdrawn</option>
+            <option>Rejected</option>
+          </select>
+        </div>
+
+        <!-- Sort -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+          <select
+            [(ngModel)]="sortField"
+            (change)="onSort(sortField)"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+          >
+            <option value="startDate">Start Date</option>
+            <option value="type">Absence Type</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Absences List -->
+    <div class="space-y-4">
+      <div
+        *ngFor="let absence of filteredAbsences"
+        class="bg-white rounded-lg shadow border border-gray-200 p-6 hover:shadow-md transition-shadow"
+      >
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2">
+              <h3 class="text-lg font-bold text-gray-900">{{ absence.type }}</h3>
+              <span class="px-3 py-1 rounded-full text-sm font-semibold" [ngClass]="getStatusColor(absence.status)">
+                {{ absence.status }}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              <div>
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Duration</p>
+                <p class="text-gray-900 font-medium">{{ absence.duration }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Start Date</p>
+                <p class="text-gray-900 font-medium">{{ formatDate(absence.startDate) }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">End Date</p>
+                <p class="text-gray-900 font-medium">{{ formatDate(absence.endDate) }}</p>
+              </div>
+              <div *ngIf="absence.approverName">
+                <p class="text-xs text-gray-500 uppercase font-semibold mb-1">Approved By</p>
+                <p class="text-gray-900 font-medium">{{ absence.approverName }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-2">
+            <button
+              class="px-3 py-1 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+              (click)="editAbsence(absence.id)"
+            >
+              Edit
+            </button>
+            <button
+              *ngIf="absence.status !== 'Completed' && absence.status !== 'Withdrawn'"
+              class="px-3 py-1 text-red-600 hover:text-red-700 font-medium text-sm transition-colors"
+              (click)="withdrawAbsence(absence.id)"
+            >
+              Withdraw
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="filteredAbsences.length === 0" class="bg-white rounded-lg shadow border border-gray-200 p-8 text-center">
+        <svg
+          class="w-12 h-12 text-gray-400 mx-auto mb-4"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <p class="text-gray-600 font-medium">No absences found</p>
+        <p class="text-gray-500 text-sm mt-1">Try adjusting your search or filters</p>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,45 +1,131 @@
-<div class="p-6">
+<div class="p-6 bg-gray-50 min-h-screen">
+  <!-- Loading State -->
   <div *ngIf="loading" class="flex justify-center items-center h-screen">
     <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
   </div>
 
-  <div *ngIf="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
     <p class="text-red-700">{{ error }}</p>
   </div>
 
   <!-- Employee Dashboard -->
-  <div *ngIf="currentUserRole === UserRole.Employee && employeeDashboard && !loading">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Employee Dashboard</h1>
-    <!-- TODO: Render employee dashboard widgets -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div *ngFor="let widget of employeeDashboard.widgets" class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900">{{ widget.title }}</h3>
-        <!-- TODO: Add widget-specific content based on widget.type -->
+  <div *ngIf="currentUserRole === UserRole.Employee && !loading" class="space-y-8">
+    <!-- Welcome Section -->
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow p-8 text-white">
+      <h1 class="text-4xl font-bold mb-2">Welcome, {{ currentUserName }}! 👋</h1>
+      <p class="text-primary-100">You're all caught up. Have a productive day!</p>
+    </div>
+
+    <!-- Summary Cards -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Salary Summary</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <app-dashboard-card *ngFor="let card of summaryCards" [data]="card"></app-dashboard-card>
+      </div>
+    </div>
+
+    <!-- Status Cards -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Employee Status</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <app-status-card *ngFor="let card of statusCards" [card]="card"></app-status-card>
+      </div>
+    </div>
+
+    <!-- Quick Access Section -->
+    <div>
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Quick Access</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <app-quick-access-card 
+          *ngFor="let item of quickAccessItems" 
+          [item]="item">
+        </app-quick-access-card>
+      </div>
+    </div>
+
+    <!-- Pending Actions Section -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Pending Actions</h2>
+      <div class="space-y-3">
+        <div class="flex items-center p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+          <span class="text-2xl mr-4">⚠️</span>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">Reimbursement Approval Pending</p>
+            <p class="text-sm text-gray-600">₹ 5,000 awaiting manager approval</p>
+          </div>
+          <a href="/salary/reimbursement" class="text-primary-600 hover:text-primary-700 font-medium">View →</a>
+        </div>
+        <div class="flex items-center p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+          <span class="text-2xl mr-4">📄</span>
+          <div class="flex-1">
+            <p class="font-semibold text-gray-900">December Payslip Available</p>
+            <p class="text-sm text-gray-600">Download your latest payslip</p>
+          </div>
+          <a href="/salary/payslip" class="text-primary-600 hover:text-primary-700 font-medium">Download →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Important Information -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- Announcements -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">🔔 Announcements</h2>
+        <div class="space-y-3">
+          <div class="pb-3 border-b border-gray-200">
+            <p class="font-medium text-gray-900">Year-End Tax Planning</p>
+            <p class="text-sm text-gray-600 mt-1">Make sure to finalize your IT and FBP declarations before Dec 31st</p>
+          </div>
+          <div>
+            <p class="font-medium text-gray-900">Leave Policy Update</p>
+            <p class="text-sm text-gray-600 mt-1">New leave balance calculation effective from January 2024</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Leave Balance -->
+      <div class="bg-white rounded-lg shadow p-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-4">🗓️ Leave Balance</h2>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+            <span class="text-gray-700">Paid Leave</span>
+            <span class="font-semibold text-gray-900">18 / 20 days</span>
+          </div>
+          <div class="flex justify-between items-center pb-2 border-b border-gray-200">
+            <span class="text-gray-700">Sick Leave</span>
+            <span class="font-semibold text-gray-900">7 / 10 days</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="text-gray-700">Casual Leave</span>
+            <span class="font-semibold text-gray-900">5 / 5 days</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Manager Dashboard -->
-  <div *ngIf="currentUserRole === UserRole.Manager && managerDashboard && !loading">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Manager Dashboard</h1>
-    <!-- TODO: Render manager dashboard widgets -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div *ngFor="let widget of managerDashboard.widgets" class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900">{{ widget.title }}</h3>
-        <!-- TODO: Add widget-specific content based on widget.type -->
-      </div>
+  <div *ngIf="currentUserRole === UserRole.Manager && !loading" class="space-y-6">
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow p-8 text-white">
+      <h1 class="text-4xl font-bold mb-2">Welcome, Manager! 👨‍💼</h1>
+      <p class="text-primary-100">Manage your team and approvals from here</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Manager Dashboard</h2>
+      <p class="text-gray-600">Manager dashboard features coming soon</p>
     </div>
   </div>
 
   <!-- Admin Dashboard -->
-  <div *ngIf="currentUserRole === UserRole.Admin && adminDashboard && !loading">
-    <h1 class="text-3xl font-bold text-gray-900 mb-6">Administrator Dashboard</h1>
-    <!-- TODO: Render admin dashboard widgets -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <div *ngFor="let widget of adminDashboard.widgets" class="bg-white rounded-lg shadow p-6">
-        <h3 class="text-lg font-semibold text-gray-900">{{ widget.title }}</h3>
-        <!-- TODO: Add widget-specific content based on widget.type -->
-      </div>
+  <div *ngIf="currentUserRole === UserRole.Admin && !loading" class="space-y-6">
+    <div class="bg-gradient-to-r from-primary-600 to-primary-700 rounded-lg shadow p-8 text-white">
+      <h1 class="text-4xl font-bold mb-2">Welcome, Administrator! 👨‍💼</h1>
+      <p class="text-primary-100">System administration and reporting tools</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-6">
+      <h2 class="text-xl font-semibold text-gray-900 mb-4">Administration Dashboard</h2>
+      <p class="text-gray-600">Admin dashboard features coming soon</p>
     </div>
   </div>
 </div>

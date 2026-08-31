@@ -1,0 +1,36 @@
+// FBP Declaration component styles
+.fbp-table {
+  // Table styling handled by Tailwind
+  width: 100%;
+
+  tbody tr {
+    transition: background-color 0.2s ease;
+  }
+}
+
+.fbp-summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.summary-card {
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+
+  &--primary {
+    background: linear-gradient(135deg, #e0f2fe 0%, #e0e7ff 100%);
+    border-color: #bfdbfe;
+  }
+
+  &--success {
+    background: linear-gradient(135deg, #dcfce7 0%, #dbeafe 100%);
+    border-color: #bbf7d0;
+  }
+
+  &--warning {
+    background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+    border-color: #fcd34d;
+  }
+}

@@ -48,6 +48,20 @@ public class Employee : AggregateRoot
     public string? State { get; set; }
     public string? Country { get; set; }
     public string? PostalCode { get; set; }
+
+    // Demographic Information
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; } // Male, Female, Other, PreferNotToSay
+    public string? MaritalStatus { get; set; } // Single, Married, Divorced, Widowed, PreferNotToSay
+    public string? BloodGroup { get; set; } // O+, O-, A+, A-, B+, B-, AB+, AB-
+    public string? HighestEducation { get; set; } // HighSchool, Bachelor, Master, PhD, etc.
+    public string? Religion { get; set; }
+    public string? Nationality { get; set; }
+
+    // Navigation Properties for Demographics
+    public virtual ICollection<NationalIdentifier> NationalIdentifiers { get; set; } = [];
+    public virtual ICollection<FamilyContact> FamilyContacts { get; set; } = [];
+
     // Authorization
     public string Role { get; set; } = "Employee";
     public Employee()

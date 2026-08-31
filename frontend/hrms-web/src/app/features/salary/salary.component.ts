@@ -1,19 +1,52 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
+import { QuickAccessCardComponent, QuickAccessItemData } from '@shared/components/quick-access-card.component';
 
-// TODO: Create SalaryService
 @Component({
   selector: 'app-salary',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div class="p-6">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Salary</h1>
-      <!-- TODO: Implement salary details view -->
-      <div class="bg-white rounded-lg shadow p-6">
-        <p class="text-gray-600">Salary information and history will appear here.</p>
-      </div>
-    </div>
-  `,
+  imports: [CommonModule, RouterModule, QuickAccessCardComponent],
+  templateUrl: './salary.component.html',
+  styleUrl: './salary.component.scss',
 })
-export class SalaryComponent {}
+export class SalaryComponent {
+  salaryQuickAccess: QuickAccessItemData[] = [
+    {
+      title: 'Payslips',
+      description: 'View and download your payslips',
+      route: '/salary/payslip',
+      iconEmoji: '📄',
+    },
+    {
+      title: 'CTC Details',
+      description: 'Annual compensation details',
+      route: '/salary/payslip',
+      iconEmoji: '💼',
+    },
+    {
+      title: 'Reimbursement',
+      description: 'Reimbursement payslips',
+      route: '/salary/payslip',
+      iconEmoji: '💰',
+    },
+    {
+      title: 'YTD Reports',
+      description: 'Year-to-date salary statements',
+      route: '/salary/ytd-reports',
+      iconEmoji: '📊',
+    },
+    {
+      title: 'IT Declaration',
+      description: 'Income tax declarations',
+      route: '/salary/it-declaration',
+      iconEmoji: '📋',
+    },
+    {
+      title: 'FBP Declaration',
+      description: 'Flexible benefit program',
+      route: '/salary/fbp-declaration',
+      iconEmoji: '🎁',
+    },
+  ];
+}

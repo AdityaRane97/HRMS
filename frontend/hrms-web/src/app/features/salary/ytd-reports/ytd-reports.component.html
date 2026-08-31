@@ -1,0 +1,126 @@
+<div class="p-6">
+  <h1 class="text-3xl font-bold text-gray-900 mb-6">YTD Reports</h1>
+
+  <!-- Tabs -->
+  <div class="flex gap-4 mb-6 border-b border-gray-200">
+    <button
+      (click)="selectTab('ytd')"
+      class="px-4 py-3 font-medium text-gray-700 border-b-2 transition-colors"
+      [ngClass]="{ 'border-primary-600 text-primary-600': activeTab === 'ytd', 'border-transparent': activeTab !== 'ytd' }"
+    >
+      YTD Statement
+    </button>
+    <button
+      (click)="selectTab('fy')"
+      class="px-4 py-3 font-medium text-gray-700 border-b-2 transition-colors"
+      [ngClass]="{ 'border-primary-600 text-primary-600': activeTab === 'fy', 'border-transparent': activeTab !== 'fy' }"
+    >
+      FY YTD Statement
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="flex justify-center items-center h-64">
+    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <p class="text-red-700">{{ error }}</p>
+  </div>
+
+  <!-- Report Content -->
+  <div *ngIf="ytdReport && !loading" class="space-y-6">
+    <!-- Financial Year Selector -->
+    <div class="bg-white rounded-lg shadow p-6">
+      <label class="block text-sm font-medium text-gray-700 mb-2">Financial Year</label>
+      <select
+        [(ngModel)]="selectedFinancialYear"
+        (change)="onFinancialYearChange()"
+        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+      >
+        <option *ngFor="let year of financialYears" [value]="year">{{ year }}</option>
+      </select>
+    </div>
+
+    <!-- YTD Report Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200">
+              <th class="px-4 py-3 text-left font-semibold text-gray-900">Description</th>
+              <th *ngFor="let month of ytdReport.months" class="px-4 py-3 text-right font-semibold text-gray-900 whitespace-nowrap">
+                {{ month }}
+              </th>
+              <th class="px-4 py-3 text-right font-semibold text-gray-900 bg-primary-50 whitespace-nowrap">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            <!-- Income Rows -->
+            <ng-container *ngFor="let row of ytdReport.incomeRows">
+              <tr (click)="toggleRow(row.label)" class="bg-blue-50 hover:bg-blue-100 cursor-pointer">
+                <td class="px-4 py-3 font-semibold text-gray-900">
+                  <span class="inline-block mr-2" [ngClass]="isRowExpanded(row.label) ? 'rotate-90' : ''">▶</span>
+                  {{ row.label }}
+                </td>
+                <td *ngFor="let m of ytdReport.months" class="px-4 py-3 text-right"></td>
+                <td class="px-4 py-3 bg-primary-50"></td>
+              </tr>
+              <ng-container *ngIf="isRowExpanded(row.label)">
+                <tr *ngFor="let child of row.children" [ngClass]="child.isSubtotal ? 'bg-blue-100 font-semibold' : 'bg-blue-25'">
+                  <td class="px-4 py-3 pl-12">{{ child.label }}</td>
+                  <td *ngFor="let val of child.values" class="px-4 py-3 text-right">₹ {{ val | number }}</td>
+                  <td class="px-4 py-3 text-right bg-primary-50">₹ {{ child.values[0] | number }}</td>
+                </tr>
+              </ng-container>
+            </ng-container>
+
+            <!-- Deductions Header -->
+            <tr (click)="toggleRow('Deductions')" class="bg-red-50 hover:bg-red-100 cursor-pointer font-semibold">
+              <td class="px-4 py-3">
+                <span class="inline-block mr-2" [ngClass]="isRowExpanded('Deductions') ? 'rotate-90' : ''">▶</span>
+                Deductions
+              </td>
+              <td *ngFor="let m of ytdReport.months" class="px-4 py-3 text-right"></td>
+              <td class="px-4 py-3 bg-primary-50"></td>
+            </tr>
+            <ng-container *ngIf="isRowExpanded('Deductions')">
+              <tr *ngFor="let row of ytdReport.deductionRows" [ngClass]="row.isSubtotal ? 'bg-red-100 font-semibold' : 'bg-red-25'">
+                <td class="px-4 py-3 pl-12">{{ row.label }}</td>
+                <td *ngFor="let val of row.values" class="px-4 py-3 text-right">₹ {{ val | number }}</td>
+                <td class="px-4 py-3 text-right bg-primary-50">₹ {{ row.values[0] | number }}</td>
+              </tr>
+            </ng-container>
+
+            <!-- Days Section -->
+            <tr class="bg-gray-100 font-semibold">
+              <td colspan="15" class="px-4 py-3">Days</td>
+            </tr>
+            <tr *ngFor="let row of ytdReport.daysRows">
+              <td class="px-4 py-3">{{ row.label }}</td>
+              <td *ngFor="let val of row.values" class="px-4 py-3 text-right">{{ val }}</td>
+              <td class="px-4 py-3 bg-primary-50"></td>
+            </tr>
+
+            <!-- Summary Section -->
+            <tr class="bg-green-100 font-semibold">
+              <td colspan="15" class="px-4 py-3">Summary</td>
+            </tr>
+            <tr *ngFor="let row of ytdReport.summaryRows" class="bg-green-50">
+              <td class="px-4 py-3 font-semibold">{{ row.label }}</td>
+              <td *ngFor="let val of row.values" class="px-4 py-3 text-right font-bold text-green-700">₹ {{ val | number }}</td>
+              <td class="px-4 py-3 text-right bg-primary-50 font-bold text-green-700">
+                ₹ {{ row.values.reduce((a, b) => a + b, 0) | number }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <p class="text-sm text-blue-800"><strong>Note:</strong> Click on section headers to expand/collapse details.</p>
+    </div>
+  </div>
+</div>

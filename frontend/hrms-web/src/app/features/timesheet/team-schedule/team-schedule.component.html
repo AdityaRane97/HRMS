@@ -1,0 +1,155 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <div>
+      <button
+        class="mb-4 p-2 hover:bg-gray-200 rounded-lg transition-colors inline-flex"
+        aria-label="Go back"
+        (click)="goBack()"
+      >
+        <svg
+          class="w-6 h-6 text-gray-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+      </button>
+      <h1 class="text-4xl font-bold text-gray-900">Team Schedule</h1>
+      <p class="text-gray-600 mt-2">View your team's availabil and shifts</p>
+    </div>
+
+    <!-- Date and Summary -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Select Date</label>
+        <input
+          type="date"
+          [(ngModel)]="selectedDate"
+          class="w-full md:w-60 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+      </div>
+
+      <div class="flex-start gap-1">
+        <p class="text-lg font-bold text-gray-900">{{ formatDate(selectedDate) }}</p>
+        <p class="text-gray-600">Total Team Members: {{ teamMembers.length }}</p>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <!-- Present -->
+      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-l-green-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm font-medium">Present</p>
+            <p class="text-3xl font-bold text-green-600 mt-2">{{ getPresentCount() }}</p>
+          </div>
+          <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <span class="text-green-600 font-bold">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- WFH -->
+      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-l-blue-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm font-medium">Work From Home</p>
+            <p class="text-3xl font-bold text-blue-600 mt-2">{{ teamMembers.filter(m => m.status === 'WFH').length }}</p>
+          </div>
+          <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <span class="text-blue-600 text-lg">💻</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- On Leave -->
+      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-l-orange-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm font-medium">On Leave</p>
+            <p class="text-3xl font-bold text-orange-600 mt-2">{{ getOnLeaveCount() }}</p>
+          </div>
+          <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+            <span class="text-orange-600 text-lg">📅</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Absent -->
+      <div class="bg-white rounded-lg shadow p-6 border-l-4 border-l-red-500">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-600 text-sm font-medium">Absent</p>
+            <p class="text-3xl font-bold text-red-600 mt-2">{{ getAbsentCount() }}</p>
+          </div>
+          <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+            <span class="text-red-600 font-bold">✗</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Members Table -->
+    <div class="bg-white rounded-lg shadow border border-gray-200 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50 border-b border-gray-200">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Name</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Designation</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Shift</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let member of teamMembers" class="border-b border-gray-200 hover:bg-gray-50">
+              <td class="px-6 py-3">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 flex items-center justify-center text-white font-bold text-sm">
+                    {{ member.name.split(' ').map(n => n.charAt(0)).join('') }}
+                  </div>
+                  <span class="text-sm font-medium text-gray-900">{{ member.name }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-3 text-sm text-gray-600">{{ member.designation }}</td>
+              <td class="px-6 py-3 text-sm text-gray-900 font-medium">{{ member.shift }}</td>
+              <td class="px-6 py-3">
+                <span class="px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1" [ngClass]="getStatusColor(member.status)">
+                  <span>{{ getStatusIcon(member.status) }}</span>
+                  {{ member.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+      <h3 class="font-bold text-gray-900 mb-4">Status Legend</h3>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold">Present</span>
+          <span class="text-gray-600">Employee is in office</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">WFH</span>
+          <span class="text-gray-600">Working from home</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-xs font-semibold">On Leave</span>
+          <span class="text-gray-600">On approved leave</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="px-3 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">Absent</span>
+          <span class="text-gray-600">Unplanned absence</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

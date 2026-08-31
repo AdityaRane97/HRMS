@@ -28,6 +28,18 @@ public class HrmsDbContext : DbContext
     public DbSet<AttendanceLog> AttendanceLogs => Set<AttendanceLog>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
 
+    // DbSets for Phase 3 entities (Profile extensions, Timesheet, Leave management)
+    public DbSet<NationalIdentifier> NationalIdentifiers => Set<NationalIdentifier>();
+    public DbSet<FamilyContact> FamilyContacts => Set<FamilyContact>();
+    public DbSet<LeaveBalance> LeaveBalances => Set<LeaveBalance>();
+    public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
+    public DbSet<TimeCard> TimeCards => Set<TimeCard>();
+
+    // DbSets for Master Data
+    public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+    public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
+    public DbSet<NationalIdType> NationalIdTypes => Set<NationalIdType>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -44,6 +56,18 @@ public class HrmsDbContext : DbContext
         modelBuilder.ApplyConfiguration(new PayrollRecordConfiguration());
         modelBuilder.ApplyConfiguration(new AttendanceLogConfiguration());
         modelBuilder.ApplyConfiguration(new LeaveRequestConfiguration());
+
+        // Phase 3: Profile extensions, Timesheet, Leave management configurations
+        modelBuilder.ApplyConfiguration(new NationalIdentifierConfiguration());
+        modelBuilder.ApplyConfiguration(new FamilyContactConfiguration());
+        modelBuilder.ApplyConfiguration(new LeaveBalanceConfiguration());
+        modelBuilder.ApplyConfiguration(new TimeEntryConfiguration());
+        modelBuilder.ApplyConfiguration(new TimeCardConfiguration());
+
+        // Master Data configurations
+        modelBuilder.ApplyConfiguration(new LeaveTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new RelationshipTypeConfiguration());
+        modelBuilder.ApplyConfiguration(new NationalIdTypeConfiguration());
 
         // Global query filter to exclude soft-deleted entities
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
