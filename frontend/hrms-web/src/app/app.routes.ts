@@ -22,6 +22,10 @@ import { DocumentsComponent } from '@features/documents/documents.component';
 import { PoliciesComponent } from '@features/policies/policies.component';
 import { RewardsComponent } from '@features/rewards/rewards.component';
 import { TasksComponent } from '@features/tasks/tasks.component';
+import { TaskListComponent } from '@features/tasks/task-list/task-list.component';
+import { TaskDetailComponent } from '@features/tasks/task-detail/task-detail.component';
+import { CreateTaskComponent } from '@features/tasks/create-task/create-task.component';
+import { EditTaskComponent } from '@features/tasks/edit-task/edit-task.component';
 import { ChatbotComponent } from '@features/chatbot/chatbot.component';
 import { AdministrationComponent } from '@features/administration/administration.component';
 
@@ -93,7 +97,26 @@ export const routes: Routes = [
       { path: 'documents', component: DocumentsComponent },
       { path: 'policies', component: PoliciesComponent },
       { path: 'rewards', component: RewardsComponent },
-      { path: 'tasks', component: TasksComponent },
+      {
+        path: 'tasks',
+        component: TasksComponent,
+      },
+      {
+        path: 'tasks/list',
+        component: TaskListComponent,
+      },
+      {
+        path: 'tasks/create',
+        component: CreateTaskComponent,
+      },
+      {
+        path: 'tasks/:id',
+        component: TaskDetailComponent,
+      },
+      {
+        path: 'tasks/:id/edit',
+        component: EditTaskComponent,
+      },
       { path: 'chatbot', component: ChatbotComponent },
       { path: 'administration', component: AdministrationComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' },

@@ -1,0 +1,38 @@
+:host {
+  display: block;
+}
+
+// Form styling (same as create-task)
+input[type='text'],
+input[type='date'],
+textarea,
+select {
+  @apply transition-all duration-200;
+
+  &:focus {
+    @apply ring-2 ring-blue-500 border-blue-500;
+  }
+
+  &.ng-invalid.ng-touched {
+    @apply ring-2 ring-red-500 border-red-500;
+  }
+}
+
+// Read-only info box
+.read-only-info {
+  @apply bg-blue-50 border border-blue-200 rounded-lg p-4;
+}
+
+// Button styling
+button[type='submit'],
+button[type='button'] {
+  @apply transition-all duration-200;
+
+  &:hover:not(:disabled) {
+    @apply transform -translate-y-0.5 shadow-md;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+}

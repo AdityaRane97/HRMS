@@ -35,6 +35,13 @@ public class HrmsDbContext : DbContext
     public DbSet<TimeEntry> TimeEntries => Set<TimeEntry>();
     public DbSet<TimeCard> TimeCards => Set<TimeCard>();
 
+    // DbSets for Document Management
+    public DbSet<Document> Documents => Set<Document>();
+
+    // DbSets for Task Management
+    public DbSet<HRMS.Domain.Entities.TaskModel> Tasks => Set<HRMS.Domain.Entities.TaskModel>();
+    public DbSet<TaskDocument> TaskDocuments => Set<TaskDocument>();
+
     // DbSets for Master Data
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
     public DbSet<RelationshipType> RelationshipTypes => Set<RelationshipType>();
@@ -63,6 +70,13 @@ public class HrmsDbContext : DbContext
         modelBuilder.ApplyConfiguration(new LeaveBalanceConfiguration());
         modelBuilder.ApplyConfiguration(new TimeEntryConfiguration());
         modelBuilder.ApplyConfiguration(new TimeCardConfiguration());
+
+        // Document Management configuration
+        modelBuilder.ApplyConfiguration(new DocumentConfiguration());
+
+        // Task Management configuration
+        modelBuilder.ApplyConfiguration(new TaskConfiguration());
+        modelBuilder.ApplyConfiguration(new TaskDocumentConfiguration());
 
         // Master Data configurations
         modelBuilder.ApplyConfiguration(new LeaveTypeConfiguration());

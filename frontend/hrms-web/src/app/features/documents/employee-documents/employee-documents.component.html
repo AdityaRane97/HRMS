@@ -1,0 +1,368 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" (click)="closeMenus()">
+  <div class="max-w-6xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-900">My Documents</h1>
+        <p class="text-gray-600 mt-2">View and download your document library</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Error State -->
+    <div
+      *ngIf="error && !loading"
+      class="bg-red-50 border border-red-200 rounded-lg p-4 flex justify-between items-center"
+    >
+      <p class="text-red-700">{{ error }}</p>
+      <button
+        (click)="retryLoad()"
+        class="text-red-600 hover:text-red-800 font-medium text-sm"
+      >
+        Retry
+      </button>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="isEmpty"
+      class="bg-white rounded-lg shadow border-2 border-dashed border-gray-300 p-12 text-center"
+    >
+      <div class="text-5xl mb-4">📂</div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">No Documents Yet</h3>
+      <p class="text-gray-600 mb-6">
+        Your documents will appear here. Contact HR to upload documents for you.
+      </p>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!loading && !isEmpty" class="space-y-6">
+      <!-- Filters and Search -->
+      <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <!-- Search -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Search Documents
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              placeholder="Search by name or description..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Category Filter -->
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <div class="relative">
+              <button
+                (click)="toggleCategoryMenu(); $event.stopPropagation()"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center bg-white hover:bg-gray-50"
+              >
+                <span>
+                  {{
+                    selectedCategory
+                      ? getCategoryDisplay(selectedCategory)
+                      : 'All Categories'
+                  }}
+                </span>
+                <svg
+                  class="w-4 h-4 transition-transform"
+                  [class.rotate-180]="expandedCategoryMenu"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                *ngIf="expandedCategoryMenu"
+                class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  (click)="selectedCategory = ''; onCategoryChange()"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  [class.bg-blue-50]="!selectedCategory"
+                >
+                  All Categories
+                </div>
+                <div
+                  *ngFor="let category of availableCategories"
+                  (click)="selectedCategory = category; onCategoryChange()"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  [class.bg-blue-50]="selectedCategory === category"
+                >
+                  {{ getCategoryDisplay(category) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Sort By
+            </label>
+            <div class="relative">
+              <button
+                (click)="toggleSortMenu(); $event.stopPropagation()"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center bg-white hover:bg-gray-50"
+              >
+                <span class="capitalize">
+                  {{ sortBy }} {{ sortAscending ? '↑' : '↓' }}
+                </span>
+                <svg
+                  class="w-4 h-4 transition-transform"
+                  [class.rotate-180]="expandedSortMenu"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </button>
+
+              <!-- Dropdown Menu -->
+              <div
+                *ngIf="expandedSortMenu"
+                class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  (click)="onSortChange('name')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'name'"
+                >
+                  <span>Name</span>
+                  <span *ngIf="sortBy === 'name'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+                <div
+                  (click)="onSortChange('date')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'date'"
+                >
+                  <span>Date</span>
+                  <span *ngIf="sortBy === 'date'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+                <div
+                  (click)="onSortChange('size')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'size'"
+                >
+                  <span>Size</span>
+                  <span *ngIf="sortBy === 'size'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clear Filters Button -->
+        <div
+          *ngIf="searchTerm || selectedCategory"
+          class="mt-4 flex justify-end"
+        >
+          <button
+            (click)="clearFilters()"
+            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- No Results State -->
+      <div
+        *ngIf="hasNoResults"
+        class="bg-white rounded-lg shadow border-2 border-dashed border-gray-300 p-12 text-center"
+      >
+        <div class="text-5xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No Documents Found</h3>
+        <p class="text-gray-600 mb-6">
+          Try adjusting your search or filters to find what you're looking for.
+        </p>
+        <button
+          (click)="clearFilters()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Documents List -->
+      <div *ngIf="!hasNoResults" class="space-y-3">
+        <div
+          *ngFor="let doc of filteredDocuments"
+          (click)="selectDocument(doc)"
+          [class.ring-2]="selectedDocument?.id === doc.id"
+          [class.ring-blue-500]="selectedDocument?.id === doc.id"
+          class="bg-white rounded-lg shadow hover:shadow-md transition-shadow p-5 border border-gray-200 cursor-pointer"
+        >
+          <div class="flex items-start gap-4">
+            <!-- File Icon -->
+            <div class="text-3xl pt-1">{{ getFileIcon(doc.fileType) }}</div>
+
+            <!-- Document Info -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-4">
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-3 mb-2">
+                    <h3 class="text-lg font-semibold text-gray-900 truncate">
+                      {{ doc.documentName }}
+                    </h3>
+                    <span
+                      [ngClass]="getCategoryBadgeColor(doc.category)"
+                      class="px-2 py-1 rounded text-xs font-medium whitespace-nowrap"
+                    >
+                      {{ getCategoryDisplay(doc.category) }}
+                    </span>
+                  </div>
+
+                  <p
+                    *ngIf="doc.description"
+                    class="text-sm text-gray-600 mb-2 line-clamp-2"
+                  >
+                    {{ doc.description }}
+                  </p>
+
+                  <div class="flex flex-wrap gap-4 text-xs text-gray-500">
+                    <span>📅 {{ doc.uploadDateFormatted }}</span>
+                    <span>💾 {{ doc.fileSizeDisplay }}</span>
+                    <span>📄 {{ doc.fileName }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex gap-2" (click)="$event.stopPropagation()">
+              <button
+                (click)="previewDocument(doc); $event.stopPropagation()"
+                title="Preview"
+                class="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              >
+                <svg
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              </button>
+
+              <button
+                (click)="downloadDocument(doc, $event)"
+                title="Download"
+                class="p-2 text-gray-600 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+              >
+                <svg
+                  class="w-5 h-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Expanded Details -->
+          <div *ngIf="selectedDocument?.id === doc.id" class="mt-4 pt-4 border-t border-gray-200 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  File Type
+                </p>
+                <p class="text-sm text-gray-900 mt-1">{{ doc.fileType }}</p>
+              </div>
+              <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                  Uploaded On
+                </p>
+                <p class="text-sm text-gray-900 mt-1">{{ doc.uploadDateFormatted }}</p>
+              </div>
+            </div>
+
+            <div>
+              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Description
+              </p>
+              <p class="text-sm text-gray-900 mt-1">
+                {{ doc.description || 'No description provided' }}
+              </p>
+            </div>
+
+            <div class="flex gap-2 pt-2">
+              <button
+                (click)="previewDocument(doc); $event.stopPropagation()"
+                class="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                Preview
+              </button>
+              <button
+                (click)="downloadDocument(doc, $event)"
+                class="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+              >
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Summary -->
+  <div
+    *ngIf="!loading && !isEmpty && filteredDocuments.length > 0"
+    class="mt-8 text-center text-sm text-gray-600"
+  >
+    Showing <span class="font-semibold">{{ filteredDocuments.length }}</span> of
+    <span class="font-semibold">{{ documents.length }}</span> documents
+  </div>
+</div>

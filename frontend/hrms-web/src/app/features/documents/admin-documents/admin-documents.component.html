@@ -1,0 +1,939 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4 sm:px-6 lg:px-8" (click)="closeMenus()">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header -->
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-900">Document Management</h1>
+        <p class="text-gray-600 mt-2">
+          Upload, view, and manage employee documents
+        </p>
+      </div>
+      <button
+        (click)="showUploadForm = true"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+      >
+        <svg
+          class="w-5 h-5"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+        Upload Document
+      </button>
+    </div>
+
+    <!-- Success Message -->
+    <div
+      *ngIf="successMessage"
+      class="bg-green-50 border border-green-200 rounded-lg p-4 flex justify-between items-center"
+    >
+      <p class="text-green-700">✓ {{ successMessage }}</p>
+      <button
+        (click)="successMessage = null"
+        class="text-green-600 hover:text-green-800"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Error Message -->
+    <div
+      *ngIf="error && !loading"
+      class="bg-red-50 border border-red-200 rounded-lg p-4 flex justify-between items-center"
+    >
+      <p class="text-red-700">{{ error }}</p>
+      <button
+        (click)="error = null"
+        class="text-red-600 hover:text-red-800"
+      >
+        ✕
+      </button>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center items-center h-64">
+      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="isEmpty"
+      class="bg-white rounded-lg shadow border-2 border-dashed border-gray-300 p-12 text-center"
+    >
+      <div class="text-5xl mb-4">📂</div>
+      <h3 class="text-xl font-semibold text-gray-900 mb-2">
+        No Documents Yet
+      </h3>
+      <p class="text-gray-600 mb-6">Start by uploading the first document.</p>
+      <button
+        (click)="showUploadForm = true"
+        class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+      >
+        Upload Document
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!loading && !isEmpty" class="space-y-6">
+      <!-- Filters and Search -->
+      <div class="bg-white rounded-lg shadow border border-gray-200 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+          <!-- Search -->
+          <div class="md:col-span-2">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Search
+            </label>
+            <input
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="onSearchChange()"
+              placeholder="Search documents or employees..."
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <!-- Employee Filter -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Employee
+            </label>
+            <select
+              [(ngModel)]="selectedEmployeeFilter"
+              (change)="onEmployeeFilterChange()"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Employees</option>
+              <option *ngFor="let emp of employees" [value]="emp.id">
+                {{ emp.name }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Category Filter -->
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Category
+            </label>
+            <div class="relative">
+              <button
+                (click)="toggleCategoryMenu(); $event.stopPropagation()"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center bg-white hover:bg-gray-50"
+              >
+                <span>
+                  {{
+                    selectedCategory
+                      ? getCategoryDisplay(selectedCategory)
+                      : 'All'
+                  }}
+                </span>
+                <svg
+                  class="w-4 h-4 transition-transform"
+                  [class.rotate-180]="expandedCategoryMenu"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </button>
+
+              <!-- Dropdown -->
+              <div
+                *ngIf="expandedCategoryMenu"
+                class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  (click)="selectedCategory = ''; onCategoryChange()"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  [class.bg-blue-50]="!selectedCategory"
+                >
+                  All Categories
+                </div>
+                <div
+                  *ngFor="let category of availableCategories"
+                  (click)="selectedCategory = category; onCategoryChange()"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  [class.bg-blue-50]="selectedCategory === category"
+                >
+                  {{ getCategoryDisplay(category) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sort -->
+          <div class="relative">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Sort
+            </label>
+            <div class="relative">
+              <button
+                (click)="toggleSortMenu(); $event.stopPropagation()"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-left flex justify-between items-center bg-white hover:bg-gray-50"
+              >
+                <span class="capitalize">
+                  {{ sortBy }} {{ sortAscending ? '↑' : '↓' }}
+                </span>
+                <svg
+                  class="w-4 h-4 transition-transform"
+                  [class.rotate-180]="expandedSortMenu"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                  />
+                </svg>
+              </button>
+
+              <!-- Dropdown -->
+              <div
+                *ngIf="expandedSortMenu"
+                class="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10"
+                (click)="$event.stopPropagation()"
+              >
+                <div
+                  (click)="onSortChange('name')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'name'"
+                >
+                  <span>Name</span>
+                  <span *ngIf="sortBy === 'name'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+                <div
+                  (click)="onSortChange('employee')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'employee'"
+                >
+                  <span>Employee</span>
+                  <span *ngIf="sortBy === 'employee'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+                <div
+                  (click)="onSortChange('date')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'date'"
+                >
+                  <span>Date</span>
+                  <span *ngIf="sortBy === 'date'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+                <div
+                  (click)="onSortChange('size')"
+                  class="px-4 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-center"
+                  [class.bg-blue-50]="sortBy === 'size'"
+                >
+                  <span>Size</span>
+                  <span *ngIf="sortBy === 'size'">{{ sortAscending ? '↑' : '↓' }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clear Filters -->
+        <div
+          *ngIf="searchTerm || selectedCategory || selectedEmployeeFilter"
+          class="mt-4 flex justify-end"
+        >
+          <button
+            (click)="clearFilters()"
+            class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- No Results -->
+      <div
+        *ngIf="hasNoResults"
+        class="bg-white rounded-lg shadow border-2 border-dashed border-gray-300 p-12 text-center"
+      >
+        <div class="text-5xl mb-4">🔍</div>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+          No Documents Found
+        </h3>
+        <p class="text-gray-600 mb-6">
+          Try adjusting your search or filters.
+        </p>
+        <button
+          (click)="clearFilters()"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Clear Filters
+        </button>
+      </div>
+
+      <!-- Documents Table -->
+      <div *ngIf="!hasNoResults" class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-gray-50 border-b border-gray-200">
+                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Document
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Employee
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Category
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Upload Date
+                </th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Size
+                </th>
+                <th class="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let doc of filteredDocuments"
+                class="border-b border-gray-200 hover:bg-gray-50 cursor-pointer transition-colors"
+                (click)="selectDocument(doc)"
+              >
+                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                  <div class="flex items-center gap-3">
+                    <span class="text-xl">{{ getFileIcon(doc.fileType) }}</span>
+                    <div class="truncate">
+                      <p class="font-medium truncate">{{ doc.documentName }}</p>
+                      <p class="text-xs text-gray-500">{{ doc.fileName }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ doc.employeeName }}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                  <span
+                    [ngClass]="getCategoryBadgeColor(doc.category)"
+                    class="px-3 py-1 rounded-full text-xs font-medium"
+                  >
+                    {{ getCategoryDisplay(doc.category) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ doc.uploadDateFormatted }}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-900">
+                  {{ doc.fileSizeDisplay }}
+                </td>
+                <td class="px-6 py-4 text-center" (click)="$event.stopPropagation()">
+                  <button
+                    (click)="downloadDocument(doc)"
+                    title="Download"
+                    class="inline-flex items-center justify-center w-8 h-8 rounded-lg text-gray-600 hover:text-green-600 hover:bg-green-50 transition-colors"
+                  >
+                    <svg
+                      class="w-5 h-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+                      />
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Document Details Panel -->
+      <div
+        *ngIf="selectedDocument"
+        class="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-6"
+      >
+        <!-- Header -->
+        <div class="flex items-start justify-between">
+          <div class="flex items-center gap-4">
+            <div class="text-4xl">{{ getFileIcon(selectedDocument.fileType) }}</div>
+            <div>
+              <h2 class="text-2xl font-bold text-gray-900">
+                {{ selectedDocument.documentName }}
+              </h2>
+              <p class="text-gray-600 mt-1">
+                Uploaded by {{ selectedDocument.uploadedBy }} on
+                {{ selectedDocument.uploadDateFormatted }}
+              </p>
+            </div>
+          </div>
+          <button
+            (click)="clearSelection()"
+            class="text-gray-400 hover:text-gray-600"
+          >
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Details Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">
+              Employee
+            </p>
+            <p class="text-lg text-gray-900 mt-2">
+              {{ selectedDocument.employeeName }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">
+              Category
+            </p>
+            <div class="mt-2">
+              <span
+                [ngClass]="getCategoryBadgeColor(selectedDocument.category)"
+                class="px-3 py-1 rounded-full text-sm font-medium inline-block"
+              >
+                {{ getCategoryDisplay(selectedDocument.category) }}
+              </span>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">
+              File Details
+            </p>
+            <p class="text-sm text-gray-900 mt-2">
+              {{ selectedDocument.fileName }}
+              <br />
+              {{ selectedDocument.fileSizeDisplay }} • {{ selectedDocument.fileType }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div *ngIf="selectedDocument.description" class="border-t border-gray-200 pt-6">
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-2">
+            Description
+          </p>
+          <p class="text-gray-900">{{ selectedDocument.description }}</p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-3 pt-4 border-t border-gray-200">
+          <button
+            (click)="downloadDocument(selectedDocument)"
+            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            Download
+          </button>
+
+          <button
+            (click)="openEditForm()"
+            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
+            </svg>
+            Edit Metadata
+          </button>
+
+          <button
+            (click)="openReplaceForm()"
+            class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3v-6"
+              />
+            </svg>
+            Replace File
+          </button>
+
+          <button
+            (click)="openDeleteConfirm()"
+            class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+          >
+            <svg
+              class="w-4 h-4"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Document Modal -->
+  <div
+    *ngIf="showUploadForm"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    (click)="showUploadForm = false"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-md w-full"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Upload Document</h3>
+        <button
+          (click)="showUploadForm = false"
+          class="text-gray-400 hover:text-gray-600"
+        >
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Employee Select -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Employee *
+          </label>
+          <select
+            [(ngModel)]="uploadForm.employeeId"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select Employee</option>
+            <option *ngFor="let emp of employees" [value]="emp.id">
+              {{ emp.name }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Document Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Document Name *
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="uploadForm.documentName"
+            placeholder="e.g., December 2024 Payslip"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Category *
+          </label>
+          <select
+            [(ngModel)]="uploadForm.category"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select Category</option>
+            <option *ngFor="let cat of availableCategories" [value]="cat">
+              {{ getCategoryDisplay(cat) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            [(ngModel)]="uploadForm.description"
+            placeholder="Add any additional notes..."
+            rows="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+        </div>
+
+        <!-- File Upload -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            File *
+          </label>
+          <div
+            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 transition-colors"
+          >
+            <input
+              #fileInput
+              type="file"
+              (change)="onFileSelected($event)"
+              class="hidden"
+            />
+            <div (click)="fileInput.click()" class="cursor-pointer">
+              <svg
+                class="w-8 h-8 text-gray-400 mx-auto mb-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3v-6"
+                />
+              </svg>
+              <p
+                *ngIf="!uploadForm.file"
+                class="text-sm text-gray-600"
+              >
+                Click to upload or drag and drop
+              </p>
+              <p *ngIf="uploadForm.file" class="text-sm text-blue-600 font-medium">
+                ✓ {{ uploadForm.file.name }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex gap-3 p-6 border-t border-gray-200">
+        <button
+          (click)="showUploadForm = false"
+          class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="submitUpload()"
+          [disabled]="!isUploadFormValid || uploading"
+          class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ uploading ? 'Uploading...' : 'Upload' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Metadata Modal -->
+  <div
+    *ngIf="showEditForm && selectedDocument"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    (click)="showEditForm = false"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-md w-full"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Edit Document Metadata</h3>
+        <button
+          (click)="showEditForm = false"
+          class="text-gray-400 hover:text-gray-600"
+        >
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Document Name -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Document Name *
+          </label>
+          <input
+            type="text"
+            [(ngModel)]="editForm.documentName"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        <!-- Category -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Category *
+          </label>
+          <select
+            [(ngModel)]="editForm.category"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select Category</option>
+            <option *ngFor="let cat of availableCategories" [value]="cat">
+              {{ getCategoryDisplay(cat) }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            Description
+          </label>
+          <textarea
+            [(ngModel)]="editForm.description"
+            rows="3"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex gap-3 p-6 border-t border-gray-200">
+        <button
+          (click)="showEditForm = false"
+          class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="submitEdit()"
+          [disabled]="!isEditFormValid || editing"
+          class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ editing ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Replace File Modal -->
+  <div
+    *ngIf="showReplaceForm && selectedDocument"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    (click)="showReplaceForm = false"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-md w-full"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-900">Replace Document File</h3>
+        <button
+          (click)="showReplaceForm = false"
+          class="text-gray-400 hover:text-gray-600"
+        >
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-6 space-y-4">
+        <!-- Current File Info -->
+        <div class="bg-gray-50 rounded-lg p-4">
+          <p class="text-sm font-medium text-gray-700 mb-2">Current File:</p>
+          <p class="text-sm text-gray-900">{{ selectedDocument.fileName }}</p>
+          <p class="text-xs text-gray-500 mt-1">{{ selectedDocument.fileSizeDisplay }}</p>
+        </div>
+
+        <!-- New File Upload -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">
+            New File *
+          </label>
+          <div
+            class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 transition-colors"
+          >
+            <input
+              #replaceFileInput
+              type="file"
+              (change)="onReplaceFileSelected($event)"
+              class="hidden"
+            />
+            <div (click)="replaceFileInput.click()" class="cursor-pointer">
+              <svg
+                class="w-8 h-8 text-gray-400 mx-auto mb-2"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3v-6"
+                />
+              </svg>
+              <p
+                *ngIf="!replaceFile"
+                class="text-sm text-gray-600"
+              >
+                Click to upload or drag and drop
+              </p>
+              <p *ngIf="replaceFile" class="text-sm text-blue-600 font-medium">
+                ✓ {{ replaceFile.name }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex gap-3 p-6 border-t border-gray-200">
+        <button
+          (click)="showReplaceForm = false"
+          class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="submitReplace()"
+          [disabled]="!replaceFile || replacing"
+          class="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ replacing ? 'Replacing...' : 'Replace' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirmation Modal -->
+  <div
+    *ngIf="showDeleteConfirm && selectedDocument"
+    class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+    (click)="showDeleteConfirm = false"
+  >
+    <div
+      class="bg-white rounded-lg shadow-xl max-w-sm w-full"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Modal Header -->
+      <div class="p-6">
+        <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+          <svg
+            class="w-6 h-6 text-red-600"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4v.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+
+        <!-- Text -->
+        <h3 class="text-lg font-semibold text-gray-900 text-center mt-4">
+          Delete Document?
+        </h3>
+        <p class="text-sm text-gray-600 text-center mt-2">
+          The document "<strong>{{ selectedDocument.documentName }}</strong
+          >" will be permanently deleted. This action cannot be undone.
+        </p>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex gap-3 p-6 border-t border-gray-200">
+        <button
+          (click)="showDeleteConfirm = false"
+          class="flex-1 px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          (click)="confirmDelete()"
+          class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Summary -->
+  <div
+    *ngIf="!loading && !isEmpty && filteredDocuments.length > 0"
+    class="mt-8 text-center text-sm text-gray-600"
+  >
+    Showing <span class="font-semibold">{{ filteredDocuments.length }}</span> of
+    <span class="font-semibold">{{ documents.length }}</span> documents
+  </div>
+</div>

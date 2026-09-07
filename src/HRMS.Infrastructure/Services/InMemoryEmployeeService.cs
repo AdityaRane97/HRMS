@@ -25,7 +25,7 @@ public class InMemoryEmployeeService : IEmployeeService
     /// </summary>
     public async Task<Employee?> GetEmployeeByIdAsync(Guid employeeId)
     {
-        return await Task.FromResult(
+        return await System.Threading.Tasks.Task.FromResult(
             EmployeeStore.TryGetValue(employeeId, out var employee) ? employee : null
         );
     }
@@ -42,7 +42,7 @@ public class InMemoryEmployeeService : IEmployeeService
             e.Username != null && e.Username.Equals(username, StringComparison.OrdinalIgnoreCase)
         );
 
-        return await Task.FromResult(employee);
+        return await System.Threading.Tasks.Task.FromResult(employee);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class InMemoryEmployeeService : IEmployeeService
             e.Email.Equals(email, StringComparison.OrdinalIgnoreCase)
         );
 
-        return await Task.FromResult(employee);
+        return await System.Threading.Tasks.Task.FromResult(employee);
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public class InMemoryEmployeeService : IEmployeeService
             e.Username != null && e.Username.Equals(username, StringComparison.OrdinalIgnoreCase)
         );
 
-        return await Task.FromResult(exists);
+        return await System.Threading.Tasks.Task.FromResult(exists);
     }
 
     // ========================================================================

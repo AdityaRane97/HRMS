@@ -1,0 +1,72 @@
+:host {
+  display: block;
+}
+
+// Task detail layout
+.task-header {
+  @apply flex justify-between items-start gap-4;
+}
+
+// Status badge animations
+.status-update {
+  button {
+    @apply transition-all duration-200;
+
+    &:hover:not(:disabled) {
+      @apply transform -translate-y-0.5 shadow;
+    }
+
+    &:disabled {
+      @apply cursor-not-allowed opacity-60;
+    }
+  }
+}
+
+// Overdue indicator
+.overdue-badge {
+  @apply text-red-600 font-bold;
+}
+
+// Attachment section
+.attachments-section {
+  @apply space-y-2;
+}
+
+// Details card
+.details-card {
+  @apply divide-y divide-gray-200;
+
+  > div {
+    @apply py-4;
+
+    &:first-child {
+      @apply pt-0;
+    }
+
+    &:last-child {
+      @apply pb-0;
+    }
+  }
+}
+
+// Back button
+.back-button {
+  @apply text-blue-600 hover:text-blue-800 transition;
+
+  &:hover {
+    @apply underline;
+  }
+}
+
+// Responsive grid for sidebar
+@media (max-width: 1024px) {
+  .sidebar {
+    @apply grid grid-cols-2 gap-4;
+  }
+}
+
+@media (max-width: 640px) {
+  .sidebar {
+    @apply grid grid-cols-1;
+  }
+}

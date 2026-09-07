@@ -7,10 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
 using HRMS.Infrastructure.Data;
 using HRMS.Infrastructure.Configuration;
+using HRMS.Infrastructure.Services;
 using HRMS.Api.Middleware;
 using HRMS.Api.Filters;
 using HRMS.Application.Services;
-using HRMS.Infrastructure.Services;
+using HRMS.Application.Contracts;
 using Serilog;
 using AutoMapper;
 using System.Text;
@@ -59,6 +60,14 @@ builder.Services.AddScoped<IPayrollService, InMemoryPayrollService>();
 builder.Services.AddScoped<IAttendanceService, InMemoryAttendanceService>();
 builder.Services.AddScoped<ILeaveService, InMemoryLeaveService>();
 builder.Services.AddScoped<IEmployeeService, InMemoryEmployeeService>();
+
+// File Storage and Document Management Services
+builder.Services.AddScoped<IFileStorage, InMemoryFileStorage>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+
+// Task Management Services
+builder.Services.AddScoped<ITaskService, TaskService>();
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
@@ -125,10 +134,14 @@ app.UseErrorHandling();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI();
-}
 
+}
+app.MapGet("/",() => { 
+    return Results.Redirect("/swagger/index.html");
+});
 app.UseHttpsRedirection();
 
 // Phase 2.2: Authentication and Authorization middleware

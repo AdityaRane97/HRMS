@@ -29,7 +29,7 @@ public class InMemoryLeaveService : ILeaveService
         request.Submit();
         _leaveRequests[id] = request;
 
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ public class InMemoryLeaveService : ILeaveService
     public async Task<LeaveRequest?> GetLeaveRequestByIdAsync(Guid leaveRequestId)
     {
         _leaveRequests.TryGetValue(leaveRequestId, out var request);
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public class InMemoryLeaveService : ILeaveService
             .OrderByDescending(lr => lr.StartDate)
             .ToList();
 
-        return await Task.FromResult(requests);
+        return await System.Threading.Tasks.Task.FromResult(requests);
     }
 
     /// <summary>
@@ -69,7 +69,7 @@ public class InMemoryLeaveService : ILeaveService
 
         request.ApproveByManager(managerId, remarks);
         request.UpdatedAt = DateTime.UtcNow;
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public class InMemoryLeaveService : ILeaveService
 
         request.RejectByManager(managerId, remarks);
         request.UpdatedAt = DateTime.UtcNow;
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -102,7 +102,7 @@ public class InMemoryLeaveService : ILeaveService
 
         request.ApproveByHR(hrApproverId, remarks);
         request.UpdatedAt = DateTime.UtcNow;
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -120,7 +120,7 @@ public class InMemoryLeaveService : ILeaveService
 
         request.RejectByHR(hrApproverId, remarks);
         request.UpdatedAt = DateTime.UtcNow;
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public class InMemoryLeaveService : ILeaveService
 
         request.Cancel(cancellationReason);
         request.UpdatedAt = DateTime.UtcNow;
-        return await Task.FromResult(request);
+        return await System.Threading.Tasks.Task.FromResult(request);
     }
 
     /// <summary>
@@ -149,7 +149,7 @@ public class InMemoryLeaveService : ILeaveService
             .OrderBy(lr => lr.StartDate)
             .ToList();
 
-        return await Task.FromResult(pending);
+        return await System.Threading.Tasks.Task.FromResult(pending);
     }
 
     /// <summary>
@@ -163,6 +163,6 @@ public class InMemoryLeaveService : ILeaveService
             .OrderBy(lr => lr.StartDate)
             .ToList();
 
-        return await Task.FromResult(pending);
+        return await System.Threading.Tasks.Task.FromResult(pending);
     }
 }

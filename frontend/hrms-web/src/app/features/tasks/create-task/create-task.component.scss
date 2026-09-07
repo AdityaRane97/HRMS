@@ -1,0 +1,98 @@
+:host {
+  display: block;
+}
+
+// Form styling
+.form-group {
+  @apply space-y-2;
+}
+
+input[type='text'],
+input[type='date'],
+textarea,
+select {
+  @apply transition-all duration-200;
+
+  &:focus {
+    @apply ring-2 ring-blue-500 border-blue-500;
+  }
+
+  &.ng-invalid.ng-touched {
+    @apply ring-2 ring-red-500 border-red-500;
+  }
+}
+
+// Validation error messages
+.error-message {
+  @apply text-sm text-red-600 font-medium mt-1;
+}
+
+// Field helper text
+.field-hint {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+// Button styling
+button[type='submit'],
+button[type='button'] {
+  @apply transition-all duration-200;
+
+  &:hover:not(:disabled) {
+    @apply transform -translate-y-0.5 shadow-md;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+}
+
+// Responsive layout
+@media (max-width: 1024px) {
+  .form-container {
+    @apply grid-cols-1;
+  }
+}
+
+// Textarea styling
+textarea {
+  @apply font-sans;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded;
+  }
+}
+
+// Label styling
+label {
+  @apply flex items-baseline gap-1;
+
+  .required {
+    @apply text-red-600;
+  }
+}
+
+// Required indicator
+.text-red-600 {
+  @apply font-bold;
+}
+
+// File upload area
+.upload-area {
+  @apply border-2 border-dashed border-gray-300 rounded-lg p-6 text-center transition-all;
+
+  &:hover {
+    @apply border-blue-500 bg-blue-50;
+  }
+
+  &.dragover {
+    @apply border-blue-600 bg-blue-50;
+  }
+}

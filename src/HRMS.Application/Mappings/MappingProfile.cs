@@ -26,5 +26,15 @@ public class MappingProfile : Profile
         CreateMap<DTOs.UpdateEmployeeDto, Employee>()
             .ForMember(dest => dest.EmployeeDepartment, opt => opt.MapFrom(src => src.Department))
             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+
+        // Document mappings
+        CreateMap<Document, DTOs.DocumentDto>()
+            .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : "Unknown"));
+
+        CreateMap<Document, DTOs.DocumentListResponse>()
+            .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : "Unknown"));
+
+        CreateMap<Document, DTOs.DocumentDetailsResponse>()
+            .ForMember(dest => dest.EmployeeName, opt => opt.MapFrom(src => src.Employee != null ? $"{src.Employee.FirstName} {src.Employee.LastName}" : "Unknown"));
     }
 }

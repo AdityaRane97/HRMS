@@ -1,0 +1,375 @@
+<div class="min-h-screen bg-gray-50 p-6">
+  <!-- Header -->
+  <div class="mb-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Tasks</h1>
+    <p class="text-gray-600">
+      {{
+        currentUserRole === UserRole.Employee
+          ? 'Tasks assigned to you'
+          : 'Manage all tasks'
+      }}
+    </p>
+  </div>
+
+  <!-- Search Bar -->
+  <div class="mb-6">
+    <input
+      type="text"
+      placeholder="🔍 Search tasks by title, description, or category..."
+      [(ngModel)]="searchQuery"
+      (change)="onSearch(searchQuery)"
+      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+    />
+  </div>
+
+  <!-- Filters Toggle -->
+  <div class="mb-6 flex justify-between items-center">
+    <button
+      (click)="showFilters = !showFilters"
+      [ngClass]="'px-4 py-2 rounded-lg font-medium transition ' +
+        (showFilters
+          ? 'bg-blue-600 text-white'
+          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50')"
+    >
+      🔽 Filters
+      <span
+        *ngIf="getFilterBadgeCount() > 0"
+        class="ml-2 inline-block bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold"
+      >
+        {{ getFilterBadgeCount() }}
+      </span>
+    </button>
+    <button
+      *ngIf="hasActiveFilters()"
+      (click)="clearFilters()"
+      class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 underline"
+    >
+      Clear All Filters
+    </button>
+  </div>
+
+  <!-- Filters Panel -->
+  <div *ngIf="showFilters" class="mb-6 bg-white rounded-lg shadow p-6 space-y-4">
+    <!-- Status Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Status
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let status of filterOptions?.statuses"
+          (click)="toggleStatusFilter(status)"
+          [ngClass]="'px-3 py-1 rounded text-sm font-medium transition ' +
+            (selectedStatuses.includes(status)
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300')"
+        >
+          {{ status }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Priority Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Priority
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let priority of filterOptions?.priorities"
+          (click)="togglePriorityFilter(priority)"
+          [ngClass]="'px-3 py-1 rounded text-sm font-medium transition ' +
+            (selectedPriorities.includes(priority)
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300')"
+        >
+          {{ priority }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Category
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let category of filterOptions?.categories"
+          (click)="toggleCategoryFilter(category)"
+          [ngClass]="'px-3 py-1 rounded text-sm font-medium transition ' +
+            (selectedCategories.includes(category)
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300')"
+        >
+          {{ category }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Sprint Filter -->
+    <div *ngIf="currentUserRole !== UserRole.Employee">
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Sprint
+      </label>
+      <div class="flex flex-wrap gap-2">
+        <button
+          *ngFor="let sprint of filterOptions?.sprints"
+          (click)="toggleSprintFilter(sprint)"
+          [ngClass]="'px-3 py-1 rounded text-sm font-medium transition ' +
+            (selectedSprints.includes(sprint)
+              ? 'bg-blue-600 text-white'
+              : 'bg-gray-200 text-gray-800 hover:bg-gray-300')"
+        >
+          {{ sprint }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Employee Filter (Manager/Admin only) -->
+    <div *ngIf="currentUserRole !== UserRole.Employee">
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Assigned Employee
+      </label>
+      <div class="space-y-2">
+        <label
+          *ngFor="let employee of filterOptions?.employees"
+          class="flex items-center gap-2 cursor-pointer"
+        >
+          <input
+            type="checkbox"
+            [checked]="selectedEmployees.includes(employee.id)"
+            (change)="toggleEmployeeFilter(employee.id)"
+            class="w-4 h-4 rounded"
+          />
+          <span class="text-sm text-gray-700">{{ employee.name }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Date Range Filter -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Due Date Range
+      </label>
+      <div class="flex gap-2 items-end">
+        <div class="flex-1">
+          <label class="text-xs text-gray-600">From</label>
+          <input
+            type="date"
+            [(ngModel)]="dateFrom"
+            class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+          />
+        </div>
+        <div class="flex-1">
+          <label class="text-xs text-gray-600">To</label>
+          <input
+            type="date"
+            [(ngModel)]="dateTo"
+            class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+          />
+        </div>
+        <button
+          (click)="applyDateFilter()"
+          class="px-3 py-2 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+        >
+          Apply
+        </button>
+      </div>
+    </div>
+
+    <!-- Sort Options -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-700 mb-3">
+        Sort By
+      </label>
+      <div class="flex gap-2">
+        <select
+          [(ngModel)]="sortBy"
+          (change)="loadTasks()"
+          class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+        >
+          <option value="dueDate">Due Date</option>
+          <option value="priority">Priority</option>
+          <option value="createdAt">Created Date</option>
+          <option value="title">Title</option>
+        </select>
+        <button
+          (click)="changeSortOrder()"
+          [ngClass]="'px-3 py-2 rounded text-sm font-medium transition ' +
+            (sortOrder === 'asc'
+              ? 'bg-gray-200 text-gray-800'
+              : 'bg-gray-200 text-gray-800')"
+        >
+          {{ sortOrder === 'asc' ? '↑ ASC' : '↓ DESC' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error Alert -->
+  <div
+    *ngIf="error"
+    class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-3"
+  >
+    <span class="text-2xl">⚠️</span>
+    <div>
+      <h3 class="font-semibold text-red-900">Error Loading Tasks</h3>
+      <p class="text-red-700">{{ error }}</p>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="space-y-3">
+    <div
+      *ngFor="let i of [1, 2, 3, 4, 5]"
+      class="animate-pulse bg-gray-200 rounded-lg h-16"
+    ></div>
+  </div>
+
+  <!-- Empty State -->
+  <div
+    *ngIf="!loading && tasks.length === 0"
+    class="bg-white rounded-lg shadow p-12 text-center"
+  >
+    <p class="text-4xl mb-2">📭</p>
+    <h3 class="text-lg font-semibold text-gray-900 mb-1">No tasks found</h3>
+    <p class="text-gray-600 mb-6">
+      {{
+        currentUserRole === UserRole.Employee
+          ? 'You have no tasks assigned. Check back later!'
+          : 'No tasks match your current filters.'
+      }}
+    </p>
+    <button
+      *ngIf="currentUserRole !== UserRole.Employee"
+      routerLink="/tasks/create"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700"
+    >
+      Create First Task
+    </button>
+  </div>
+
+  <!-- Task Table -->
+  <div *ngIf="!loading && tasks.length > 0" class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="bg-gray-100 border-b border-gray-200">
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Task
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Assigned
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Category
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Priority
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Status
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Due Date
+            </th>
+            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-900">
+              Action
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+          <tr
+            *ngFor="let task of tasks"
+            [ngClass]="'hover:bg-gray-50 cursor-pointer transition ' + getRowClass(task)"
+            routerLink="/tasks/{{ task.id }}"
+          >
+            <td class="px-6 py-4">
+              <div>
+                <p class="font-medium text-gray-900">{{ task.title }}</p>
+                <p class="text-sm text-gray-600">{{ task.sprintName }}</p>
+              </div>
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-600">
+              {{ task.assignedEmployeeName }}
+            </td>
+            <td class="px-6 py-4 text-sm text-gray-600">
+              {{ task.category }}
+            </td>
+            <td class="px-6 py-4">
+              <app-task-priority-badge
+                [badge]="{ priority: task.priority }"
+              ></app-task-priority-badge>
+            </td>
+            <td class="px-6 py-4">
+              <app-task-status-badge
+                [badge]="{ status: task.status }"
+              ></app-task-status-badge>
+            </td>
+            <td
+              class="px-6 py-4 text-sm"
+              [ngClass]="isOverdue(task.dueDate, task.status)
+                ? 'font-bold text-red-600'
+                : 'text-gray-600'"
+            >
+              {{
+                new Date(task.dueDate).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })
+              }}
+              <span *ngIf="isOverdue(task.dueDate, task.status)" class="ml-1">
+                ⚠️
+              </span>
+            </td>
+            <td class="px-6 py-4" (click)="$event.stopPropagation()">
+              <button
+                routerLink="/tasks/{{ task.id }}"
+                class="px-3 py-1 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+              >
+                View →
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      class="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-between items-center"
+    >
+      <div class="text-sm text-gray-600">
+        Showing
+        <span class="font-medium">{{ (currentPage - 1) * pageSize + 1 }}</span>
+        to
+        <span class="font-medium">{{
+          Math.min(currentPage * pageSize, totalCount)
+        }}</span>
+        of
+        <span class="font-medium">{{ totalCount }}</span>
+      </div>
+      <div class="flex gap-2">
+        <button
+          (click)="changePage(currentPage - 1)"
+          [disabled]="currentPage <= 1"
+          class="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          ← Previous
+        </button>
+        <span class="px-3 py-2 text-sm text-gray-600">
+          Page {{ currentPage }} of {{ totalPages }}
+        </span>
+        <button
+          (click)="changePage(currentPage + 1)"
+          [disabled]="currentPage >= totalPages"
+          class="px-3 py-2 text-sm font-medium text-gray-700 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Next →
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

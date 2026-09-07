@@ -31,7 +31,7 @@ public class InMemoryPayrollService : IPayrollService
         payroll.CalculateNetSalary();
 
         _payrollRecords[id] = payroll;
-        return await Task.FromResult(payroll);
+        return await System.Threading.Tasks.Task.FromResult(payroll);
     }
 
     /// <summary>
@@ -41,7 +41,7 @@ public class InMemoryPayrollService : IPayrollService
     public async Task<PayrollRecord?> GetPayrollByIdAsync(Guid payrollId)
     {
         _payrollRecords.TryGetValue(payrollId, out var payroll);
-        return await Task.FromResult(payroll);
+        return await System.Threading.Tasks.Task.FromResult(payroll);
     }
 
     /// <summary>
@@ -57,7 +57,7 @@ public class InMemoryPayrollService : IPayrollService
             .OrderBy(p => p.PayrollMonth)
             .ToList();
 
-        return await Task.FromResult(records);
+        return await System.Threading.Tasks.Task.FromResult(records);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class InMemoryPayrollService : IPayrollService
         payroll.CalculateDeductions();
         payroll.CalculateNetSalary();
 
-        return await Task.FromResult(payroll);
+        return await System.Threading.Tasks.Task.FromResult(payroll);
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public class InMemoryPayrollService : IPayrollService
         payroll.MarkAsProcessed();
         payroll.UpdatedAt = DateTime.UtcNow;
 
-        return await Task.FromResult(payroll);
+        return await System.Threading.Tasks.Task.FromResult(payroll);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public class InMemoryPayrollService : IPayrollService
         payroll.ReferenceNumber = referenceNumber;
         payroll.UpdatedAt = DateTime.UtcNow;
 
-        return await Task.FromResult(payroll);
+        return await System.Threading.Tasks.Task.FromResult(payroll);
     }
 
     /// <summary>
@@ -125,6 +125,6 @@ public class InMemoryPayrollService : IPayrollService
             .OrderBy(p => p.PayrollMonth)
             .ToList();
 
-        return await Task.FromResult(pending);
+        return await System.Threading.Tasks.Task.FromResult(pending);
     }
 }

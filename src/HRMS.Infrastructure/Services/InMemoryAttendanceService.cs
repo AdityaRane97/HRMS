@@ -35,7 +35,7 @@ public class InMemoryAttendanceService : IAttendanceService
         log.CheckIn(checkInTime);
         _attendanceLogs[id] = log;
 
-        return await Task.FromResult(log);
+        return await System.Threading.Tasks.Task.FromResult(log);
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ public class InMemoryAttendanceService : IAttendanceService
         log.Remarks = remarks;
         log.UpdatedAt = DateTime.UtcNow;
 
-        return await Task.FromResult(log);
+        return await System.Threading.Tasks.Task.FromResult(log);
     }
 
     /// <summary>
@@ -64,7 +64,7 @@ public class InMemoryAttendanceService : IAttendanceService
     public async Task<AttendanceLog?> GetAttendanceByDateAsync(Guid employeeId, DateTime date)
     {
         var log = _attendanceLogs.Values.FirstOrDefault(a => a.EmployeeId == employeeId && a.AttendanceDate == date);
-        return await Task.FromResult(log);
+        return await System.Threading.Tasks.Task.FromResult(log);
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public class InMemoryAttendanceService : IAttendanceService
             .OrderBy(a => a.AttendanceDate)
             .ToList();
 
-        return await Task.FromResult(logs);
+        return await System.Threading.Tasks.Task.FromResult(logs);
     }
 
     /// <summary>
@@ -105,7 +105,7 @@ public class InMemoryAttendanceService : IAttendanceService
         log.AttendanceStatus = status;
         log.UpdatedAt = DateTime.UtcNow;
 
-        return await Task.FromResult(log);
+        return await System.Threading.Tasks.Task.FromResult(log);
     }
 
     /// <summary>
@@ -132,7 +132,7 @@ public class InMemoryAttendanceService : IAttendanceService
             AverageWorkedHours = logs.Count > 0 ? (decimal)logs.Average(a => (double)a.WorkedHours) : 0
         };
 
-        return await Task.FromResult(summary);
+        return await System.Threading.Tasks.Task.FromResult(summary);
     }
 }
 

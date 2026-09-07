@@ -1,0 +1,71 @@
+:host {
+  display: block;
+}
+
+// Filter buttons animations
+.filter-btn {
+  @apply transition-all duration-200 ease-in-out;
+
+  &:hover:not(:disabled) {
+    @apply transform -translate-y-0.5 shadow-md;
+  }
+}
+
+// Table responsive design
+table {
+  @apply w-full;
+
+  thead tr {
+    @apply bg-gray-100;
+  }
+
+  tbody tr:hover {
+    @apply bg-gray-50;
+  }
+}
+
+// Status indicators
+.status-indicator {
+  @apply inline-flex items-center gap-2;
+
+  &.overdue {
+    @apply text-red-600 font-bold;
+  }
+}
+
+// Pagination styling
+.pagination {
+  @apply flex gap-2 items-center;
+
+  button:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+// Empty state
+.empty-state {
+  @apply text-center py-12;
+
+  .empty-icon {
+    @apply text-4xl mb-4;
+  }
+}
+
+// Scrollbar styling for table overflow
+.table-container {
+  &::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 rounded;
+
+    &:hover {
+      @apply bg-gray-600;
+    }
+  }
+}
